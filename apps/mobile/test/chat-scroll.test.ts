@@ -1,20 +1,23 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Message } from "@ds-bot/mobile-sdk";
-import { chatTailVersion, createChatScrollController } from "../src/logic/chat-scroll.ts";
+import { chatTailVersion, createChatScrollController, hasVisibleChatContent } from "../src/logic/chat-scroll.ts";
 
 function harness() {
   const frames = new Set<() => void>();
   const delays = new Set<() => void>();
   const calls: boolean[] = [];
   const notices: boolean[] = [];
+  const away: boolean[] = [];
+  const following: boolean[] = [];
   const schedule = (queue: Set<() => void>, callback: () => void) => { queue.add(callback); return () => { queue.delete(callback); }; };
   const flush = (queue: Set<() => void>) => { const batch = [...queue]; queue.clear(); batch.forEach(callback => callback()); };
   const controller = createChatScrollController({
     scrollToEnd: animated => calls.push(animated), unreadChanged: value => notices.push(value),
+    awayFromBottomChanged: value => away.push(value), followingChanged: value => following.push(value),
     frame: callback => schedule(frames, callback), delay: callback => schedule(delays, callback),
   });
-  return { controller, calls, notices, frame: () => flush(frames), settle: () => flush(delays) };
+  return { controller, calls, notices, away, following, frame: () => flush(frames), settle: () => flush(delays) };
 }
 const message = (seq: number, text = `Long history ${seq}\n${"Synthetic QA text. ".repeat(20)}`): Message => ({ id: `m-${seq}`, sessionId: "scroll-qa", seq, role: "assistant", text, createdAt: seq + 1 });
 const history = Array.from({ length: 500 }, (_, index) => message(index + 100));
@@ -153,4 +156,72 @@ test("keyboard viewport and explicit send grant bounded corrections while histor
   h.controller.sent(); h.frame(); assert.equal(h.calls.length, before + 1);
   for (let i = 0; i < 30; i++) { h.controller.resize("content", 390, 61000 + (i % 2 ? 40 : -40)); h.frame(); }
   assert.ok(h.calls.length <= before + 3);
+});
+
+test("back-to-bottom is based on actual distance even without new messages and hides for an explicit jump", () => {
+  const h = ready();
+  h.controller.touchStart(); h.controller.beginDrag(); h.controller.scroll(59300, 60000, 700);
+  assert.deepEqual(h.following, [false]); assert.deepEqual(h.away, [], 'a bottom touch does not show the button');
+  h.controller.scroll(2000, 60000, 700); h.controller.touchEnd(); h.controller.endDrag(); h.settle();
+  assert.deepEqual(h.away, [true]); assert.deepEqual(h.notices, [], 'history alone is enough to show the button');
+  h.controller.jumpToBottom(); h.frame(); assert.deepEqual(h.away, [true, false]); assert.deepEqual(h.calls, [true]);
+  h.controller.scroll(20000, 60000, 700); assert.deepEqual(h.away, [true, false], 'animated jump does not flash its button');
+  h.controller.scroll(59300, 60000, 700);
+  for (let i = 0; i < 40; i++) { h.controller.resize('content', 390, 60000 + (i % 2 ? 40 : -40)); h.frame(); }
+  assert.ok(h.calls.length <= 3); assert.deepEqual(h.away, [true, false]);
+});
+
+test("a jump finishing before revised content reaches bottom restores its button without a scroll loop", () => {
+  const h = ready(); readOlder(h);
+  h.controller.jumpToBottom(); h.frame(); h.controller.momentumStart();
+  h.controller.resize('content', 390, 61000);
+  h.controller.scroll(59300, 61000, 700); h.controller.momentumEnd(); h.frame();
+  assert.deepEqual(h.away, [true, false, true]);
+  assert.deepEqual(h.calls, [true]);
+  for (let i = 0; i < 30; i++) { h.controller.resize('content', 390, 61000 + (i % 2 ? 40 : -40)); h.frame(); }
+  assert.deepEqual(h.calls, [true]);
+});
+
+test("repeated bottom overscroll and reversal never issue a programmatic scroll without a new tail", () => {
+  const h = ready();
+  for (let i = 0; i < 40; i++) {
+    h.controller.touchStart(); h.controller.beginDrag();
+    h.controller.scroll(59300 + (i % 2 ? 80 : 0), 60000, 700);
+    h.controller.resize('content', 390, 60000 + (i % 2 ? 40 : -40));
+    h.controller.touchEnd(); h.controller.endDrag(); h.controller.momentumStart();
+    h.controller.scroll(59300, 60000, 700); h.controller.momentumEnd(); h.settle(); h.frame();
+  }
+  assert.deepEqual(h.calls, []); assert.deepEqual(h.away, []); assert.deepEqual(h.notices, []);
+  readOlder(h); assert.equal(h.away.at(-1), true);
+  h.controller.beginDrag(); h.controller.scroll(59300, 60000, 700); h.controller.endDrag(); h.settle(); h.frame();
+  assert.equal(h.away.at(-1), false); assert.deepEqual(h.calls, []);
+});
+
+test("inverted native offset zero starts at the newest item without initial scroll commands", () => {
+  const calls: boolean[] = [], away: boolean[] = [];
+  const frames: Array<() => void> = [];
+  const controller = createChatScrollController({ inverted:true,scrollToEnd:value=>calls.push(value),unreadChanged:()=>{},awayFromBottomChanged:value=>away.push(value),
+    frame: callback=>{frames.push(callback);return()=>{const i=frames.indexOf(callback);if(i>=0)frames.splice(i,1);};},delay:()=>()=>{} });
+  controller.tailChanged('cached-newest');
+  for(const height of [7000,14000,21000,60000]) { controller.resize('content',390,height);controller.resize('viewport',390,700);controller.scroll(0,height,700);while(frames.length)frames.shift()!(); }
+  assert.deepEqual(calls,[]);assert.deepEqual(away,[]);
+  controller.beginDrag();controller.scroll(5000,60000,700);controller.endDrag();
+  assert.deepEqual(away,[true]);
+  controller.jumpToBottom();while(frames.length)frames.shift()!();controller.scroll(0,60000,700);
+  assert.deepEqual(calls,[true]);assert.deepEqual(away,[true,false]);
+  assert.equal(hasVisibleChatContent({...message(1),text:''}),false);
+});
+
+test("inverted history is stable while a genuinely new tail follows only at native zero", () => {
+  const calls:boolean[]=[];const frames=new Set<()=>void>();const delays=new Set<()=>void>();
+  const schedule=(queue:Set<()=>void>,callback:()=>void)=>{queue.add(callback);return()=>{queue.delete(callback);};};
+  const flush=(queue:Set<()=>void>)=>{const batch=[...queue];queue.clear();batch.forEach(callback=>callback());};
+  const controller=createChatScrollController({inverted:true,scrollToEnd:value=>calls.push(value),unreadChanged:()=>{},frame:callback=>schedule(frames,callback),delay:callback=>schedule(delays,callback)});
+  controller.tailChanged('newest');controller.scroll(0,60000,700);
+  for(let i=0;i<40;i++){controller.touchStart();controller.beginDrag();controller.scroll(i%2?-50:0,60000,700);controller.touchEnd();controller.endDrag();controller.momentumEnd();flush(delays);controller.resize('content',390,60000+(i%2?40:-40));flush(frames);}
+  assert.deepEqual(calls,[]);
+  controller.tailChanged('actual-new-reply');flush(frames);assert.deepEqual(calls,[false]);
+  controller.touchStart();controller.beginDrag();controller.scroll(5000,60000,700);controller.touchEnd();controller.endDrag();flush(delays);
+  controller.tailChanged('another-new-reply');controller.resize('content',390,62000);flush(frames);assert.deepEqual(calls,[false]);
+  controller.pause();controller.resume();flush(frames);assert.deepEqual(calls,[false]);
 });

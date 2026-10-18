@@ -56,8 +56,13 @@ import { combineTurnReasoning } from "../logic/reasoning";
 import { mobileActionAllowed, mobilePanelAllowed, mobileMediaAllowed, mobileCancelAllowed, BRIDGE_UNAVAILABLE } from "../logic/mobile-access";
 import { supportsMobileAction } from "../logic/mobile-capabilities";
 import { ThinkingLevelPicker } from "../components/ThinkingLevelPicker";
-import { chatTailVersion, createChatScrollController } from "../logic/chat-scroll";
+import { chatTailVersion, createChatScrollController, hasVisibleChatContent } from "../logic/chat-scroll";
+import { hideQuestionReceipt } from "../logic/tool-results";
 import { composeReferenceDraft, mentionCandidates, mentionQuery, referenceDraft, sessionMention } from "../logic/composer";
+
+// Fabric prepares its native anchor using the old props and adjusts using the
+// new props in one mount. Toggling this during a drag can reuse a stale anchor.
+const HISTORY_ANCHOR = { minIndexForVisible: 0 };
 
 function messageDate(message?: Message) {
   const value = message?.createdAt;
@@ -89,6 +94,8 @@ export function ChatScreen({
   transcription,
   onOpenNavigation,
   onOpenDetails,
+  active = true,
+  openRevision = 0,
 }: {
   client: MobileClient;
   host: Host;
@@ -101,6 +108,8 @@ export function ChatScreen({
   transcription: boolean;
   onOpenNavigation?: () => void;
   onOpenDetails?: () => void;
+  active?: boolean;
+  openRevision?: number;
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -153,17 +162,18 @@ export function ChatScreen({
     return () => { hide.remove(); show.remove(); };
   }, []);
   const [newMessages, setNewMessages] = useState(false);
-  const [anchorHistory, setAnchorHistory] = useState(false);
+  const [awayFromBottom, setAwayFromBottom] = useState(false);
   const scroll = useMemo(() => createChatScrollController({
-    scrollToEnd: animated => list.current?.scrollToEnd({ animated }),
+    inverted: true,
+    scrollToEnd: animated => list.current?.scrollToOffset({ offset: 0, animated }),
     unreadChanged: setNewMessages,
-    followingChanged: following => setAnchorHistory(!following),
+    awayFromBottomChanged: setAwayFromBottom,
     frame: callback => { const id = requestAnimationFrame(callback); return () => cancelAnimationFrame(id); },
     delay: (callback, milliseconds) => { const id = setTimeout(callback, milliseconds); return () => clearTimeout(id); },
-  }), [conversation.id]);
+  }), [conversation.id, openRevision]);
   useEffect(() => {
     setNewMessages(false);
-    setAnchorHistory(false);
+    setAwayFromBottom(false);
     return () => scroll.dispose();
   }, [scroll]);
   const bot = team.bots.find(
@@ -174,14 +184,14 @@ export function ChatScreen({
   );
   const room = team.rooms.find(item => item.id === conversation.id || `room:${item.id}` === conversation.id);
   const ownWork = bot && ownBotWork(bot.id, team);
-  const displayMessages = useMemo(() => combineTurnReasoning(room && progress.id === conversation.id ? mergeGroupProgress(chat.messages, progress.rounds, room, team) : chat.messages), [chat.messages, room, team, progress, conversation.id]);
+  const displayMessages = useMemo(() => combineTurnReasoning(room && progress.id === conversation.id ? mergeGroupProgress(chat.messages, progress.rounds, room, team) : chat.messages)
+    .filter(message => hasVisibleChatContent(message) && !(message.role === "tool" && message.tool && hideQuestionReceipt(message.tool))), [chat.messages, room, team, progress, conversation.id]);
   const tailVersion = chatTailVersion(displayMessages);
+  const newestFirstMessages = useMemo(() => [...displayMessages].reverse(), [displayMessages]);
   useEffect(() => { scroll.tailChanged(tailVersion); }, [scroll, tailVersion]);
   useEffect(() => {
-    if (!tailVersion) return;
-    const timer = setTimeout(() => scroll.initialPosition(), 350);
-    return () => clearTimeout(timer);
-  }, [scroll, !!tailVersion]);
+    if (active) scroll.resume(); else scroll.pause();
+  }, [scroll, active]);
   const questionOwners = new Set([conversation.id, bot?.id, room?.id]);
   const questions = Object.entries(team.questions ?? {})
     .filter(([sessionId, question]) => question.conversationId
@@ -293,20 +303,24 @@ export function ChatScreen({
 
       </View>
       <FlatList
+        key={`${conversation.id}:${openRevision}`}
         ref={list}
+        inverted
         style={{ flex: 1 }}
-        data={displayMessages}
+        data={newestFirstMessages}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingTop: 82,
+          paddingTop: dockHeight + 12,
+          paddingBottom: 82,
           flexGrow: 1,
         }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         onLayout={event => { const { width, height } = event.nativeEvent.layout; scroll.resize("viewport", width, height); }}
-        scrollIndicatorInsets={{ top: 76, bottom: dockHeight }}
-        maintainVisibleContentPosition={anchorHistory ? { minIndexForVisible: 0 } : undefined}
-        onScrollBeginDrag={() => scroll.beginDrag()}
+        scrollIndicatorInsets={{ top: dockHeight, bottom: 76 }}
+        maintainVisibleContentPosition={HISTORY_ANCHOR}
+        onScrollBeginDrag={() => { scroll.beginDrag(); Keyboard.dismiss(); }}
         onScrollEndDrag={() => scroll.endDrag()}
         onMomentumScrollBegin={() => scroll.momentumStart()}
         onMomentumScrollEnd={() => scroll.momentumEnd()}
@@ -322,7 +336,7 @@ export function ChatScreen({
         }}
         scrollEventThrottle={16}
         onContentSizeChange={(width, height) => scroll.resize("content", width, height)}
-        ListHeaderComponent={
+        ListFooterComponent={
           <View style={{ gap: 8 }}>
           {team.readOnly ? <Notice text={team.readOnly} /> : null}
           {chat.cursor ? (
@@ -354,12 +368,12 @@ export function ChatScreen({
         }
         renderItem={({ item, index }) => {
           if(item.role==="assistant" && !item.text && !item.reasoning && !item.attachments?.length && !item.pending)return null;
-          const previous = displayMessages[index - 1];
+          const previous = newestFirstMessages[index + 1];
           const date = messageDate(item);
           const before = messageDate(previous);
           const changedDay = date && (!before || date.toDateString() !== before.toDateString());
           const changedPart = previous && item.sessionId && previous.sessionId && item.sessionId !== previous.sessionId;
-          return <View>
+          return <View testID={`chat-message:${item.id}`}>
             {changedPart ? <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 14 }}>
               <View style={{ height: 1, flex: 1, backgroundColor: t.line }} />
               <Text style={{ color: t.muted, fontSize: 12 }}>{tr("New conversation part")}</Text>
@@ -380,8 +394,8 @@ export function ChatScreen({
             />
           </View>;
         }}
-        ListFooterComponent={
-          <View style={{ paddingBottom: dockHeight + 12 }}>
+        ListHeaderComponent={
+          <View>
             {supportsMobileAction(team.mobileCapabilities, 'approvals', 'approvals') && <ApprovalCards client={client} conversationId={conversation.id} online={online} messages={chat.messages} canResolve={writable && allows("approval-resolve")} />}
             {bot && mobilePanelAllowed(team.mobileCapabilities, "secrets") ? <SecretRequestCards botId={bot.id} client={client} team={team} online={writable} refresh={refresh} /> : null}
             {chat.queue.map((item) => (
@@ -413,9 +427,13 @@ export function ChatScreen({
           </View>
         }
       />
-      {newMessages && (
+      {awayFromBottom && (
         <View pointerEvents="box-none" style={{ position: "absolute", bottom: dockHeight + 8, left: 0, right: 0, zIndex: 11, alignItems: "center" }}>
-          <Button floating title={tr("↓ New messages")} secondary onPress={() => scroll.jumpToBottom()} />
+          <Pressable accessibilityRole="button" accessibilityLabel={tr("Back to bottom")} accessibilityHint={newMessages ? tr("New messages") : undefined}
+            onPress={() => scroll.jumpToBottom()} style={({pressed}) => ({ width:44,height:44,borderRadius:22,alignItems:"center",justifyContent:"center",
+              backgroundColor:pressed ? t.hover : t.bg,borderWidth:1,borderColor:t.line,shadowColor:"#000000",shadowOpacity:.08,shadowRadius:5,shadowOffset:{width:0,height:2},elevation:2 })}>
+            <Icon name="down" size={22} color={t.ink}/>
+          </Pressable>
         </View>
       )}
       <View pointerEvents="box-none"
@@ -432,7 +450,7 @@ export function ChatScreen({
           gap: 9,
         }}
       >
-        {chat.status === "unauthorized" ? <Notice capsule error text={tr("This device no longer has access. Open Settings, disconnect, then pair again.")} /> : !online ? <Notice capsule text={tr("Host offline. Cached messages and drafts are available. Keep your computer awake, then reconnect to send.")} /> : chat.status !== "connected" ? <Notice capsule text={tr("Reconnecting…")} /> : null}
+        {chat.status === "unauthorized" ? <Notice capsule error text={tr("This device no longer has access. Open Settings, disconnect, then pair again.")} /> : !online ? <Notice capsule text={tr("Host offline. Cached messages and drafts are available. Keep your computer awake, then reconnect to send.")} /> : chat.status !== "connected" ? <Notice capsule text={tr(chat.status === "connecting" ? "Connecting…" : "Reconnecting…")} /> : null}
         <Notice capsule error text={chat.error} />
         <MentionMenu rows={mentionRows} pick={pickMention} close={() => setDismissedMention(mentionKey)} />
         {!!composer.references.length && <View pointerEvents="box-none" style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{composer.references.map(ref=><View key={ref.sessionId} style={{flexDirection:"row",alignItems:"center",backgroundColor:t.surface,borderColor:t.line,borderWidth:1,borderRadius:999,paddingLeft:14,gap:8}}>

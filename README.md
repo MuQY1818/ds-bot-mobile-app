@@ -14,7 +14,7 @@
 
 DS Bot Mobile App 为自托管 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）与 [DS Bot](https://github.com/Fei2411/DeepSeek-Bot) 提供 iOS / Android 原生客户端和独立的电脑端配套插件。电脑端负责可视化配对与设备管理，**DS Bot Mobile Bridge** 负责认证与消息传输；模型与工具仍在电脑端运行。
 
-> **源码预览**：当前版本为 `0.1.4-preview.1`，原生 App 版本 `0.1.4`，电脑端配套插件 `0.2.0`，Mobile Bridge 保持 `0.0.6`。配套插件与 Bridge 分别打包、安装和启停；Mobile Web `0.4.0` 与本插件共用“手机访问”弹窗；**尚未提供签名 IPA/APK**。原生客户端需使用自己的平台工具链构建。浏览器入口由 [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) 提供。
+> **源码预览**：当前版本为 `0.1.4-preview.1`，原生 App 版本 `0.1.4`，电脑端配套插件 `0.2.0`，Mobile Bridge 保持 `0.0.6`。配套插件与 Bridge 分别打包、安装和启停；Mobile Web `0.4.1` 与本插件共用“手机访问”弹窗；**尚未提供签名 IPA/APK**。原生客户端需使用自己的平台工具链构建。浏览器入口由 [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) 提供。
 
 ## 界面预览
 
@@ -137,7 +137,7 @@ npm run audit
 
 ## 当前限制
 
-本项目仍处于源码预览阶段。自动化测试、Hermes bundle 导出和 Web 设计预览各自有明确范围；iPhone / Android 真机安装、键盘、锁屏、网络切换及通知矩阵尚未完成。DSH 跨重启的 pending 恢复也存在上游限制。详见[验证说明](docs/validation.md)。
+本项目仍处于源码预览阶段。自动化测试、Hermes bundle 导出和 Web 设计预览各自有明确范围；已有部分 iPhone 安装、在线读取和界面检查，首次配对、Android 真机、锁屏、网络切换及通知等完整矩阵尚未完成。DSH 跨重启的 pending 恢复也存在上游限制。详见[验证说明](docs/validation.md)。
 
 ## 许可与致谢
 

@@ -7,15 +7,17 @@ import { runInNewContext } from 'node:vm';
 import { URL } from 'node:url';
 import * as sdk from '../../../packages/mobile-sdk/index.js';
 import { confirmOrSubmit, definitelyRejected } from '../src/logic/submissions.ts';
+import { createConversationStreamPool } from '../src/logic/conversation-streams.ts';
 
 const require = createRequire(import.meta.url), ts = require('typescript');
 const { WebSocket, WebSocketServer } = require('../../../bridge/node_modules/ws');
 
 // The actual hook and SDK run against an isolated HTTP/WS server. A small hook
 // host and clock replace React Native rendering, never a user's host/profile.
-async function fixture(denyWebSocket = true) {
+async function fixture(denyWebSocket = true, canQueue = false) {
   const state = { messages: [] as any[], historyReads: 0, deniedUpgrades: 0, posts: 0,
-    failReads: false, receiptStatus: 'accepted', receipts: new Map<string, any>(), postGate: null as Promise<void> | null };
+    handshakes: [] as string[], failReads: false, receiptStatus: 'accepted', receipts: new Map<string, any>(), postGate: null as Promise<void> | null,
+    historyGate: null as Promise<void> | null, cacheGate: null as Promise<void> | null, draftReads: 0 };
   const sockets = new Set<any>();
   const server = createServer(async (request, response) => {
     const path = new URL(request.url!, 'http://fixture').pathname;
@@ -24,6 +26,7 @@ async function fixture(denyWebSocket = true) {
     if (request.headers.authorization !== 'Bearer fixture-access') return json({ error: { code: 'UNAUTHORIZED' } }, 401);
     if (path.endsWith('/messages')) {
       state.historyReads++;
+      if (state.historyGate) await state.historyGate;
       return state.failReads ? json({ error: { code: 'UNAVAILABLE' } }, 503) : json({ messages: state.messages, cursor: null, sessionId: 'part' });
     }
     if (path.endsWith('/target')) return json({ conversationId: 'bot:a', sessionId: 'part', revision: 1 });
@@ -43,16 +46,21 @@ async function fixture(denyWebSocket = true) {
     json({ error: { code: 'NOT_FOUND' } }, 404);
   });
   const wss = new WebSocketServer({ noServer: true });
+  server.on('connection', socket => socket.on('error', () => {}));
   server.on('upgrade', (request, socket, head) => {
+    socket.on('error', () => {});
     if (denyWebSocket) { state.deniedUpgrades++; socket.end('HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'); return; }
     wss.handleUpgrade(request, socket, head, (ws: any) => {
-      sockets.add(ws); ws.on('close', () => sockets.delete(ws));
-      ws.on('message', () => ws.send(JSON.stringify({ type: 'ready', conversationId: 'bot:a' })));
+      sockets.add(ws); ws.on('close', () => sockets.delete(ws)); ws.on('error', () => {});
+      ws.on('message', (data: any) => { const auth = JSON.parse(data); state.handshakes.push(auth.conversationId); ws.conversationId = auth.conversationId; ws.send(JSON.stringify({ type: 'ready', conversationId: auth.conversationId })); });
     });
   });
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   const address = server.address() as { port: number };
   const cache = new sdk.MemoryCache();
+  const originalSetMessages = cache.setMessages.bind(cache), originalGetDraft = cache.getDraft.bind(cache);
+  cache.setMessages = async (...args: Parameters<typeof originalSetMessages>) => { if (state.cacheGate) await state.cacheGate; return originalSetMessages(...args); };
+  cache.getDraft = async (...args: Parameters<typeof originalGetDraft>) => { state.draftReads++; return originalGetDraft(...args); };
   const tokenStore = new sdk.MemoryTokenStore({ accessToken: 'fixture-access', refreshToken: 'fixture-refresh',
     serverId: 'fixture', deviceId: 'fixture-phone', expiresAt: Date.now() + 3600000 });
   const client = new sdk.MobileClient({ baseUrl: `http://127.0.0.1:${address.port}`, allowInsecure: true,
@@ -62,6 +70,10 @@ async function fixture(denyWebSocket = true) {
   const listeners = new Set<(value: string) => void>();
   const timers = new Map<number, { at: number; callback: () => void }>();
   let cursor = 0, dirty = false, focused = true, now = 0, nextTimer = 0, current: any, uuid = 0;
+  const conversationStreams = createConversationStreamPool({
+    setTimer: ((callback: () => void, delay = 0) => { const id = ++nextTimer; timers.set(id, { callback, at: now + delay }); return id; }) as any,
+    clearTimer: ((id: number) => { timers.delete(id); }) as any,
+  });
   const same = (a: any[], b: any[]) => !!a && !!b && a.length === b.length && a.every((value, index) => Object.is(value, b[index]));
   const react = {
     useState(initial: any) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === 'function' ? initial() : initial;
@@ -82,9 +94,10 @@ async function fixture(denyWebSocket = true) {
       if (name === 'react-native') return { AppState: { currentState: 'active', addEventListener(_name: string, callback: (value: string) => void) { listeners.add(callback); return { remove() { listeners.delete(callback); } }; } } };
       if (name === '@ds-bot/mobile-sdk') return sdk;
       if (name === '../components/ScreenActivity') return { useScreenActivity: () => focused };
+      if (name === '../logic/conversation-streams') return { conversationStreams };
       if (name === 'expo-crypto') return { randomUUID: () => `fixture-request-${++uuid}` };
       if (name === '../logic/submissions') return { confirmOrSubmit, definitelyRejected };
-      if (name === '../logic/mobile-access') return { mobileActionAllowed: () => false };
+      if (name === '../logic/mobile-access') return { mobileActionAllowed: () => canQueue };
       if (name === '../types') return { errorText: (error: any) => error?.message || String(error) };
       if (name === '../storage') return { cache, tokenStore, readCache: async (server: string, key: string) => values.get(`${server}:${key}`) ?? null,
         writeCache: async (server: string, key: string, value: any) => { values.set(`${server}:${key}`, value); } };
@@ -103,8 +116,9 @@ async function fixture(denyWebSocket = true) {
     switchChat(value: string) { selected = value; render(); },
     switchHost(value: string) { host = { serverId: value }; render(); },
     foreground(value: boolean) { for (const listener of listeners) listener(value ? 'active' : 'background'); },
-    emit(event: unknown) { for (const socket of sockets) socket.send(JSON.stringify(event)); },
-    async close() { for (const slot of slots) slot?.cleanup?.(); client.dispose(); for (const socket of sockets) socket.terminate();
+    emit(event: unknown, conversationId?: string) { for (const socket of sockets) if (!conversationId || socket.conversationId === conversationId) socket.send(JSON.stringify(event)); },
+    streams: conversationStreams,
+    async close() { for (const slot of slots) slot?.cleanup?.(); conversationStreams.clear(client); client.dispose(); for (const socket of sockets) socket.terminate();
       await new Promise<void>(resolve => wss.close(() => resolve())); server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); },
   };
 }
@@ -200,4 +214,52 @@ test('an accepted send completing in background is retained without polling and 
     f.foreground(true); await f.until(() => f.state.historyReads === 2); await f.flush();
     assert.equal(f.current().messages.length, 1); assert.equal(f.state.posts, 1);
   } finally { release?.(); await f.close(); }
+});
+
+test('slow REST and cache writes cannot delay WS ready; warm focus reuses one authenticated handshake', async () => {
+  const f = await fixture(false, true);
+  let releaseHistory!: () => void, releaseCache!: () => void;
+  try {
+    f.state.historyGate = new Promise<void>(resolve => { releaseHistory = resolve; });
+    f.state.cacheGate = new Promise<void>(resolve => { releaseCache = resolve; });
+    await f.until(() => f.state.historyReads === 1 && f.current().status === 'connected');
+    assert.deepEqual(f.state.handshakes, ['bot:a']);
+    f.edit('Keep this edited draft');
+    f.focus(false); await f.flush();
+    f.emit({ type: 'delta', conversationId: 'bot:a', sessionId: 'part', attemptId: 'attempt', index: 1, text: 'Cumulative detached text', busy: true,
+      queue: [{ id: 'queued', text: 'next', target: 'next-turn' }] }, 'bot:a');
+    await f.flush();
+    assert.equal(f.current().messages.length, 0, 'detached UI receives no callbacks');
+    f.focus(true); await f.until(() => f.current().messages.some((item: any) => item.text === 'Cumulative detached text'));
+    assert.equal(f.current().status, 'connected'); assert.equal(f.current().running, true);
+    assert.equal(f.current().draft, 'Keep this edited draft');
+    assert.equal(f.current().queue[0]?.id, 'queued');
+    assert.equal(f.state.draftReads, 1);
+    assert.deepEqual(f.state.handshakes, ['bot:a']);
+    releaseHistory(); await f.flush();
+    assert.equal(f.current().status, 'connected', 'SQLite reconciliation remains independent of transport');
+    releaseCache(); await f.flush();
+  } finally { releaseHistory?.(); releaseCache?.(); await f.close(); }
+});
+
+test('A to B to A isolates streams and replays detached canonical/accepted state without another A handshake', async () => {
+  const f = await fixture(false);
+  try {
+    await f.until(() => f.current().status === 'connected');
+    const accepted = { id: 'accepted:request', sessionId: 'part', requestId: 'request', role: 'user', text: 'Accepted', createdAt: 1000, seq: Number.MAX_SAFE_INTEGER, localSubmission: true };
+    f.emit({ type: 'message', conversationId: 'bot:a', message: accepted }, 'bot:a');
+    await f.until(() => f.current().messages.length === 1);
+    f.switchChat('bot:b'); await f.until(() => f.state.handshakes.length === 2 && f.current().status === 'connected');
+    const canonical = { ...accepted, id: 'canonical', localSubmission: false, seq: 1 };
+    f.emit({ type: 'message', conversationId: 'bot:a', message: canonical }, 'bot:a');
+    f.emit({ type: 'delta', conversationId: 'bot:a', sessionId: 'part', attemptId: 'a', index: 1, text: 'Only A' }, 'bot:b');
+    await f.flush(); assert.equal(f.current().messages.length, 0);
+    f.switchChat('bot:a'); await f.until(() => f.current().messages[0]?.id === 'canonical');
+    assert.deepEqual(f.state.handshakes, ['bot:a', 'bot:b']);
+    assert.equal(f.current().messages.length, 1); assert.equal(f.current().status, 'connected');
+    f.foreground(false); await f.until(() => f.streams.peek(f.client, 'fixture', 'bot:a') === undefined);
+    assert.equal(f.streams.peek(f.client, 'fixture', 'bot:b'), undefined);
+    f.foreground(true); await f.until(() => f.state.handshakes.length === 3 && f.current().status === 'connected');
+    assert.deepEqual(f.state.handshakes, ['bot:a', 'bot:b', 'bot:a']);
+  } finally { await f.close(); }
 });

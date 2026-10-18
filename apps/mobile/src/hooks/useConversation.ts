@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import * as Crypto from "expo-crypto";
 import {
-  applyConversationEvent,
   acceptedSubmissionMessage,
   Attachment,
   ConnectionStatus,
@@ -17,6 +16,7 @@ import { confirmOrSubmit, definitelyRejected } from "../logic/submissions";
 import { mobileActionAllowed, mobileCancelAllowed, BRIDGE_UNAVAILABLE } from "../logic/mobile-access";
 import type { MobileCapabilities } from "../logic/mobile-capabilities";
 import { useScreenActivity } from "../components/ScreenActivity";
+import { conversationStreams } from "../logic/conversation-streams";
 interface PendingSubmission extends Submission {
   deviceId?: string;
 }
@@ -33,10 +33,10 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [queueSession, setQueueSession] = useState("");
   useEffect(() => { if (!canQueue) { setQueue([]); setQueueSession(""); } }, [canQueue]);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => conversationStreams.peek(client, host.serverId, id)?.snapshot.messages ?? []);
   const [draft, setDraftState] = useState("");
   const [cursor, setCursor] = useState<string | null>(null);
-  const [status, setStatus] = useState<ConnectionStatus>("connecting");
+  const [status, setStatus] = useState<ConnectionStatus>(() => conversationStreams.peek(client, host.serverId, id)?.status ?? "connecting");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -56,10 +56,23 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
   const draftWrites = useRef<Promise<void>>(Promise.resolve());
   const refreshMessages = useRef<() => void>(() => {});
   const scope = useRef({ client, serverId: host.serverId, id });
+  const streamOwner = useRef({ client, serverId: host.serverId });
   if (scope.current.client !== client || scope.current.serverId !== host.serverId || scope.current.id !== id)
     scope.current = { client, serverId: host.serverId, id };
   useEffect(() => {
     let active = true;
+    if (streamOwner.current.client !== client || streamOwner.current.serverId !== host.serverId) {
+      conversationStreams.clear(streamOwner.current.client);
+      streamOwner.current = { client, serverId: host.serverId };
+    }
+    const retained = conversationStreams.peek(client, host.serverId, id);
+    setMessages(retained?.snapshot.messages ?? []);
+    setStatus(retained?.status ?? "connecting");
+    setRunning(retained?.snapshot.running ?? false);
+    setQueue(canQueue ? (retained?.snapshot.queue ?? []) as QueueItem[] : []);
+    setQueueSession(canQueue ? retained?.snapshot.queueSession ?? "" : "");
+    setCursor(retained?.snapshot.cursor ?? null);
+    setError("");
     sending.current = false;
     setBusy(false);
     hydration.current = Promise.all([
@@ -71,7 +84,7 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     ])
       .then(([saved, text, submission, session, previous]) => {
         if (active) {
-          setMessages(saved);
+          setMessages(previous => mergeMessages(saved, previous));
           setDraftState(text);
           setPending(submission);
           setPreviousDevice(
@@ -88,7 +101,7 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
   }, [client, host.serverId, id]);
   useEffect(() => {
     alive.current = true;
-    let stream: { close(): void } | undefined;
+    let stream: ReturnType<typeof conversationStreams.acquire> | undefined;
     let request: AbortController | undefined;
     let active = true;
     let generation = 0;
@@ -97,6 +110,7 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     let pollFailures = 0;
     let pollAgain = false;
     let connectionStatus: ConnectionStatus = "connecting";
+    let starting = false;
     let foreground =
       AppState.currentState !== "background" &&
       AppState.currentState !== "inactive";
@@ -123,6 +137,7 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       try {
         const page = await client.messages(id, { signal: controller.signal });
         if (!visible() || generation !== run) return;
+        stream?.remember(page.messages);
         setMessages(previous => mergeMessages(previous, page.messages));
         pollFailures = 0;
       } catch {
@@ -136,28 +151,19 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     const refresh = () => schedulePoll(0, true);
     refreshMessages.current = refresh;
     async function start() {
-      if (!active || !foreground || !focused) return;
-      await hydration.current;
-      if (!active || !foreground || !focused) return;
+      if (!visible() || stream || starting) return;
+      starting = true;
       const run = ++generation;
       const current = () => active && foreground && focused && generation === run;
+      await hydration.current;
+      starting = false;
+      if (!current()) return;
       stopPolling();
-      connectionStatus = "connecting";
       pollFailures = 0;
-      stream?.close();
       request?.abort();
       request = new AbortController();
       try {
-        const page = await client.messages(id, { signal: request.signal });
-        if (!current()) return;
-        setMessages((previous) => mergeMessages(previous, page.messages));
-        setCursor(page.cursor);
-      } catch (err) {
-        if (current()) setError(errorText(err));
-      }
-      if (!current()) return;
-      stream = client.connect({
-        conversationId: id,
+      stream = conversationStreams.acquire(client, host.serverId, id, {
         onStatus: (value) => {
           if (!current()) return;
           connectionStatus = value;
@@ -172,26 +178,32 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
         onError: (err) => {
           if (current()) setError(errorText(err));
         },
-        onEvent: (event) => {
+        onSnapshot: (snapshot) => {
           if (!current()) return;
-          if (typeof event.busy === "boolean") setRunning(event.busy);
-          else if (event.phase === "running") setRunning(true);
-          else if (event.phase === "idle") setRunning(false);
-          else if (event.type === "delta") setRunning(true);
-          if (Array.isArray(event.queue)) {
-            setQueue(event.queue as QueueItem[]);
-            setQueueSession(event.sessionId || "");
+          setRunning(snapshot.running);
+          if (canQueue && snapshot.queue) {
+            setQueue(snapshot.queue as QueueItem[]);
+            setQueueSession(snapshot.queueSession || "");
           }
-          if (event.type === "error")
-            setError(event.error?.message || "Connection error.");
-          else {
-            setError("");
-            setMessages((previous) => applyConversationEvent(previous, event));
-            if (event.type === "reset")
-              setCursor((previous) => previous ?? event.cursor ?? null);
-          }
+          setError("");
+          // The lease owns pending stream attempts, including events received
+          // without a screen listener. Keep cached/accepted canonical rows.
+          setMessages(previous => mergeMessages(previous.some(message => message.pending) ? previous.filter(message => !message.pending) : previous, snapshot.messages));
+          if (snapshot.cursor !== undefined) setCursor(previous => previous ?? snapshot.cursor ?? null);
         },
       });
+      } catch (err) {
+        if (current()) { setError(errorText(err)); schedulePoll(); }
+      }
+      // Handshake and REST/cache reconciliation are independent. A slow page
+      // read or SQLite queue must never delay the live stream.
+      const lease = stream;
+      void client.messages(id, { signal: request.signal }).then(page => {
+        if (!current()) return;
+        lease?.remember(page.messages, page.cursor);
+        setMessages(previous => mergeMessages(previous, page.messages));
+        setCursor(page.cursor);
+      }).catch(err => { if (current()) setError(errorText(err)); });
       if (canQueue) void client
         .action<{ sessionId: string; items: QueueItem[] }>("queue", {
           conversationId: id,
@@ -210,8 +222,11 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       if (foreground) void start();
       else {
         generation++;
+        starting = false;
         stopPolling();
-        stream?.close();
+        conversationStreams.clear(client);
+        stream?.release();
+        stream = undefined;
         request?.abort();
         setStatus("closed");
       }
@@ -222,7 +237,7 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       stopPolling();
       if (refreshMessages.current === refresh) refreshMessages.current = () => {};
       alive.current = false;
-      stream?.close();
+      stream?.release();
       request?.abort();
       sub.remove();
     };

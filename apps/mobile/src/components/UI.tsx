@@ -280,7 +280,7 @@ const iconNames = {
   menu: "menu", back: "chevron-left", close: "x", plus: "plus", search: "search",
   settings: "settings", bots: "users", groups: "message-circle", chat: "message-square", devices: "smartphone",
   schedules: "clock", usage: "bar-chart-2", pin: "bookmark", chevron: "chevron-right",
-  up: "chevron-up", more: "more-horizontal", check: "check", connectors: "link", secrets: "key", feedback: "message-square",
+  up: "chevron-up", down: "arrow-down", more: "more-horizontal", check: "check", connectors: "link", secrets: "key", feedback: "message-square",
   microphone: "mic", folder: "folder", camera: "camera", image: "image", send: "arrow-up",
   stop: "square", skills: "book-open", browser: "monitor", bell: "bell", reply: "corner-up-left", smile: "smile", copy: "copy", share: "share-2", download: "download", speaker: "volume-2",
 } as const;

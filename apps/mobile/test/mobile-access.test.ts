@@ -6,6 +6,7 @@ import { URL } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { mobileActionAllowed, mobilePanelAllowed, notificationAccess, mobileCancelAllowed, mobileMediaAllowed } from '../src/logic/mobile-access.ts';
 import { supportsMobileAction } from '../src/logic/mobile-capabilities.ts';
+import { conversationStreams } from '../src/logic/conversation-streams.ts';
 
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
@@ -97,13 +98,14 @@ test('conversation hook never requests queue on minimal bridge and still connect
   for (const capabilities of [minimal, {queue:true}, {actions:['queue']}]) {
     const calls:string[]=[];
     const client={messages:async()=>{calls.push('messages');return {messages:[],cursor:null};},connect:()=>{calls.push('connect');return {close(){}};},action:async(name:string)=>{calls.push(name);return {items:[],sessionId:'s'};}};
-    const mounted=mountHook('useConversation',{'react-native':native,'expo-crypto':{},'@ds-bot/mobile-sdk':{mergeMessages:()=>[]},'../storage':storage,'../types':{errorText:String},'../logic/submissions':{},'../components/ScreenActivity':{useScreenActivity:()=>true}});
+    const mounted=mountHook('useConversation',{'react-native':native,'expo-crypto':{},'@ds-bot/mobile-sdk':{mergeMessages:()=>[]},'../storage':storage,'../types':{errorText:String},'../logic/submissions':{},'../logic/conversation-streams':{conversationStreams},'../components/ScreenActivity':{useScreenActivity:()=>true}});
     mounted.hook(client,{serverId:'test'},'bot:a',capabilities);
     await mounted.run();
     assert.equal(calls.includes('queue'), capabilities !== minimal);
     assert.equal(calls.includes('messages'), true);
     assert.equal(calls.includes('connect'), true);
     mounted.dispose();
+    conversationStreams.clear(client as any);
   }
 });
 

@@ -5,6 +5,7 @@ import { tr } from "./i18n";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Platform,
+  AppState,
   ScrollView,
   StatusBar,
   Text,
@@ -60,18 +61,21 @@ import { ScreenActivity } from "./components/ScreenActivity";
 import { NativeNavigation, createAppNavigator } from "./components/NativeNavigation";
 import { AppNavigation } from "./components/AppNavigation";
 import { selectConversation, showMainNavigation, type Route } from "./logic/app-navigation";
+import { conversationStreams, watchConversationStreamLifecycle } from "./logic/conversation-streams";
 function Shell() {
   const t = useTheme();
   const { tr, locale } = useI18n();
   const [classic, setClassic] = useState(false);
   const [host, setHost] = useState<Host | null>(null);
   const [client, setClient] = useState<MobileClient | null>(null);
+  const [foreground, setForeground] = useState(AppState.currentState !== "background" && AppState.currentState !== "inactive");
   const [loading, setLoading] = useState(true);
   const [intro,setIntro] = useState(true);
   const [error, setError] = useState("");
   const [route, setRoute] = useState<Route>({ page: "home" });
   const navigator = useRef(createAppNavigator()).current;
   const [selected, setSelected] = useState("");
+  const [chatOpening, setChatOpening] = useState({ id: "", revision: 0 });
   const [searching, setSearching] = useState(false);
   const [newChat, setNewChat] = useState(false);
   const [query, setQuery] = useState("");
@@ -111,7 +115,13 @@ function Shell() {
       mounted = false;
     };
   }, []);
-  useEffect(() => () => client?.dispose(), [client]);
+  useEffect(() => {
+    const stop = watchConversationStreamLifecycle(client, AppState, setForeground);
+    return () => {
+      stop();
+      client?.dispose();
+    };
+  }, [client]);
   useEffect(() => {
     setThemePreferences(workspace.team.prefs);
   }, [workspace.team.prefs]);
@@ -187,6 +197,7 @@ function Shell() {
     navigator.open({ page: "home" });
   }
   async function disconnect() {
+    if (client) conversationStreams.clear(client);
     if (host) { await writeCache(host.serverId, 'backgroundOptIn', false); await writeCache(host.serverId, 'pushOptIn', false); }
     const controller = new AbortController(), timer = setTimeout(()=>controller.abort(),3000);
     try { await Promise.allSettled([stopBackgroundNotifications(allows('notifications-background-unregister') ? client || undefined : undefined), allows('notifications-preferences') ? client?.action('notifications-preferences',{enabled:false,categories:[]},{signal:controller.signal}) : undefined]); }
@@ -208,6 +219,7 @@ function Shell() {
     );
     const conversationId = found?.id || id;
     setSelected(conversationId);
+    setChatOpening(previous => ({ id: conversationId, revision: previous.revision + 1 }));
     setNewChat(false);
     navigator.open({ page: "chat", id: conversationId });
   }
@@ -384,10 +396,11 @@ function Shell() {
     );
   }
   function renderPage(route: Route, focused: boolean) {
-    const online = workspace.online && focused;
+    const active = focused && foreground;
+    const online = workspace.online && active;
     const conversation = selectConversation(workspace.conversations, route.page === "chat" ? route.id || selected : selected, classic, chief?.sessionId);
     return (
-    <ScreenActivity.Provider value={online}>
+    <ScreenActivity.Provider value={active}>
     <SafeAreaView edges={route.page === "chat" ? ["top", "left", "right"] : undefined} style={{ flex: 1, backgroundColor: t.bg }}>
       <StatusBar barStyle={t.dark ? "light-content" : "dark-content"} />
       <View
@@ -437,6 +450,8 @@ function Shell() {
               client={client}
               host={host}
               conversation={conversation}
+              active={active}
+              openRevision={chatOpening.id === conversation.id ? chatOpening.revision : 0}
               conversations={workspace.conversations}
               select={choose}
               team={workspace.team}

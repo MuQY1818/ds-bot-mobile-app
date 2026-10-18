@@ -139,7 +139,7 @@ The detailed project guides are currently in Simplified Chinese; client, SDK and
 
 ## Current limitations
 
-This is a source preview. Automated tests, Hermes bundle exports and Web design previews have distinct scopes. The full iPhone / Android device installation, keyboard, lock-screen, network-transition and notification matrix remains incomplete. DSH also has upstream limitations around pending-input recovery across restarts. See [validation](docs/validation.md).
+This is a source preview. Automated tests, Hermes bundle exports and Web design previews have distinct scopes. Selected iPhone installation, online-read and interface checks have passed; the complete first-pairing, Android, lock-screen, network-transition and notification matrix remains incomplete. DSH also has upstream limitations around pending-input recovery across restarts. See [validation](docs/validation.md).
 
 ## License and acknowledgments
 

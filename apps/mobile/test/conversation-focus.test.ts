@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
 import { createRequire } from 'node:module';
 import { runInNewContext } from 'node:vm';
+import { conversationStreams } from '../src/logic/conversation-streams.ts';
 
 const require = createRequire(import.meta.url), ts = require('typescript');
 function mountChat(deferHistory = false) {
@@ -55,6 +56,7 @@ function mountChat(deferHistory = false) {
       if (name === 'react-native') return { AppState: { currentState: 'active', addEventListener(_name: string, listener: (state: string) => void) { listeners.add(listener); return { remove() { listeners.delete(listener); } }; } } };
       if (name === '../components/ScreenActivity') return { useScreenActivity: () => focused };
       if (name === '../storage') return storage;
+      if (name === '../logic/conversation-streams') return { conversationStreams };
       if (name === '@ds-bot/mobile-sdk') return { mergeMessages: (old: any[], next: any[]) => [...old, ...next] };
       if (name === '../logic/mobile-access') return { mobileActionAllowed: () => false };
       if (name === '../types') return { errorText: String };
@@ -73,17 +75,17 @@ function mountChat(deferHistory = false) {
     draft: () => current.draft,
     stats: () => ({ activeStreams, maxStreams, draftReads, historyReads }),
     finishHistory: () => finishHistory?.(),
-    dispose() { for (const slot of slots) slot?.cleanup?.(); },
+    dispose() { for (const slot of slots) slot?.cleanup?.(); conversationStreams.clear(client as any); },
   };
 }
 
-test('retained chat closes on blur, resumes once and never rehydrates an edited draft', async () => {
+test('retained chat detaches on blur, reuses its lease and never rehydrates an edited draft', async () => {
   const chat = mountChat();
   await chat.flush();
   assert.deepEqual(chat.stats(), { activeStreams: 1, maxStreams: 1, draftReads: 1, historyReads: 1 });
   chat.edit('edited while viewing conversation');
   chat.focus(false); await chat.flush();
-  assert.equal(chat.stats().activeStreams, 0);
+  assert.equal(chat.stats().activeStreams, 1);
   chat.foreground(false); chat.foreground(true); await chat.flush();
   assert.equal(chat.stats().historyReads, 1);
   chat.focus(true); await chat.flush();
@@ -96,12 +98,13 @@ test('retained chat closes on blur, resumes once and never rehydrates an edited 
   chat.dispose(); assert.equal(chat.stats().activeStreams, 0);
 });
 
-test('a history read resolved after blur cannot start an inactive chat stream', async () => {
+test('a slow history read does not block the stream and cannot restart it after background', async () => {
   const chat = mountChat(true);
   await chat.flush();
   assert.equal(chat.stats().historyReads, 1);
-  chat.focus(false); chat.finishHistory(); await chat.flush();
+  assert.equal(chat.stats().activeStreams, 1);
+  chat.foreground(false); chat.focus(false); chat.finishHistory(); await chat.flush();
   assert.equal(chat.stats().activeStreams, 0);
-  assert.equal(chat.stats().maxStreams, 0);
+  assert.equal(chat.stats().maxStreams, 1);
   chat.dispose();
 });
