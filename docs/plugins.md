@@ -13,6 +13,8 @@ DS Bot 的移动访问分为三个独立的电脑端插件。它们使用 DSH �
 
 App 配套插件和 Bridge 在同一源码仓库维护，分别发布 `.tgz`。它们各自的版本与许可证清单写入包内 `package.json`；原生 App 的版本写入 `apps/mobile/app.json`。共享仓库不会将它们变成一个必须一起启停的插件。
 
+App 配套插件 0.1.1 起提供 **设置 → 移动设备** 独立入口，使用公开 `settings.section`，并保留官方主侧栏插件管理器中的 `plugins.bundle.config`。两个入口呈现相同设备管理页，使用相同的所有者权限；第三方市场没有渲染 bundle 配置区时，仍可从设置进入。
+
 ## 访问链路
 
 ```mermaid
@@ -45,6 +47,8 @@ Web 使用宿主浏览器认证，App 使用单独批准的设备身份。两种
 ## English
 
 The three desktop bundles are independently installable: **Mobile Web** supplies the browser interface, **Mobile App** supplies desktop pairing/device management, and **Mobile Bridge** supplies device authentication and transport. The native iOS / Android App remains a separate client. App companion and Bridge share a source repository but have separate package manifests, versions and archives.
+
+Companion 0.1.1 adds **Settings → 移动设备 (Mobile devices)** through public `settings.section` and keeps the official `plugins.bundle.config` entry. Both present the same owner-authenticated device management page, including when a third-party market does not render bundle configuration.
 
 Web uses host browser authentication and requires neither App nor Bridge. The native App uses owner-approved device credentials and does not require Mobile Web. Disabling or removing App companion cleans up its UI without owning the Bridge listener or deleting authorization state. Disabling Bridge stops transport; re-enabling with the same dedicated state directory retains the host identity and authorized devices. Revocation is an explicit owner action. Hiding a QR code clears only its display; unused codes expire after two minutes and a new code replaces earlier unused codes.
 

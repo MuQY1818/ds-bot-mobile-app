@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml"><img src="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml/badge.svg?branch=main" alt="构建与检查"></a>
-  <a href="https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.1"><img src="https://img.shields.io/badge/source-0.1.3--preview.1-blue" alt="源码预览 0.1.3-preview.1"></a>
+  <a href="https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.2"><img src="https://img.shields.io/badge/source-0.1.3--preview.2-blue" alt="源码预览 0.1.3-preview.2"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0 许可"></a>
 </p>
 
@@ -14,7 +14,7 @@
 
 DS Bot Mobile App 为自托管 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）与 [DS Bot](https://github.com/Fei2411/DeepSeek-Bot) 提供 iOS / Android 原生客户端和独立的电脑端配套插件。电脑端负责可视化配对与设备管理，**DS Bot Mobile Bridge** 负责认证与消息传输；模型与工具仍在电脑端运行。
 
-> **源码预览**：当前版本为 `0.1.3-preview.1`，原生 App 版本 `0.1.3`，电脑端配套插件 `0.1.0`，Mobile Bridge 保持 `0.0.6`。配套插件与 Bridge 分别打包、安装和启停；**尚未提供签名 IPA/APK**。原生客户端需使用自己的平台工具链构建。浏览器入口由 [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) 提供。
+> **源码预览**：当前版本为 `0.1.3-preview.2`，原生 App 版本 `0.1.3`，电脑端配套插件 `0.1.1`，Mobile Bridge 保持 `0.0.6`。配套插件与 Bridge 分别打包、安装和启停；**尚未提供签名 IPA/APK**。原生客户端需使用自己的平台工具链构建。浏览器入口由 [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) 提供。
 
 ## 界面预览
 
@@ -31,7 +31,7 @@ DS Bot Mobile App 为自托管 [DeepSeek Harness](https://github.com/deepseek-ai
 - **延续现有会话**：访问 Bot 与群聊，收发文字，查看带成员署名的回复。
 - **原生交互**：页面导航、返回手势、消息滚动、精灵头像、深浅主题与中英文界面。
 - **设备独立授权**：电脑所有者批准配对，可单独撤销设备访问。
-- **电脑端配对管理**：在标准插件配置页生成二维码、查看待批准请求与授权设备，并二次确认撤销。
+- **电脑端配对管理**：在“设置 → 移动设备”生成二维码、查看待批准请求与授权设备，并二次确认撤销；同时保留标准 bundle 配置页。
 - **连接恢复与草稿**：恢复连接后同步历史，保留本地草稿，发送由用户确认。
 - **宿主能力集成**：模型与思考强度、会话标记、Usage、个人记忆、定时任务创建/查看/删除及自己的排队输入查看/移除。
 
@@ -71,17 +71,17 @@ Bridge 文字链路和电脑端配对管理界面已实现，并使用隔离宿�
 | --- | --- |
 | 宿主 | DSH `0.2.1-rc.2` 与兼容 DS Bot 包 |
 | Bridge | 同次发布的 `ds-bot-mobile-bridge-0.0.6.tgz` |
-| App 配套插件 | `ds-bot-mobile-app-0.1.0.tgz`，用于电脑端可视化设备管理 |
+| App 配套插件 | `ds-bot-mobile-app-0.1.1.tgz`，用于电脑端可视化设备管理 |
 | 网络 | 手机可达、证书可信的 HTTPS 入口 |
 | 开发环境 | Git、Node.js 24、npm；源码审计需 Python 3 |
 | iOS 构建 | macOS、Xcode；真机使用自己的签名身份 |
 | Android 构建 | Android SDK 与对应构建工具链 |
 
-**兼容性前提**：Bridge 依赖 `bridge.describe`、稳定的 `bridge.submit` 与 `bridge.redact` 接口。原版 npm DS Bot `0.1.7` 不包含这些接口；本项目[发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.1)提供单独标识的 `ds-bot-0.1.7-codex.1.tgz`。安装位置与迁移步骤见[安装指南](docs/installation.md)。
+**兼容性前提**：Bridge 依赖 `bridge.describe`、稳定的 `bridge.submit` 与 `bridge.redact` 接口。原版 npm DS Bot `0.1.7` 不包含这些接口；本项目[发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.2)提供单独标识的 `ds-bot-0.1.7-codex.1.tgz`。安装位置与迁移步骤见[安装指南](docs/installation.md)。
 
 ### 1. 准备电脑端
 
-从 Release 下载兼容 DS Bot、Bridge、App 配套插件及各自校验文件，核对校验值后，通过现有 DSH 插件管理器分别安装。按[Bridge 配置示例](bridge/cordis.patch.example.yml)设置独立状态目录、监听地址及 HTTPS 入口。启用 `ds-bot-mobile-app` 后，打开该 bundle 的配置页，确认显示 **Bridge 已连接**，再生成配对二维码。详细步骤见[安装指南](docs/installation.md)。
+从 Release 下载兼容 DS Bot、Bridge、App 配套插件及各自校验文件，核对校验值后，通过现有 DSH 插件管理器分别安装。按[Bridge 配置示例](bridge/cordis.patch.example.yml)设置独立状态目录、监听地址及 HTTPS 入口。启用 `ds-bot-mobile-app` 后，打开 **设置 → 移动设备**，确认显示 **Bridge 已连接**，再生成配对二维码。官方插件侧栏中该 bundle 的配置页也提供相同功能。详细步骤见[安装指南](docs/installation.md)。
 
 ### 2. 构建客户端
 

@@ -35,11 +35,30 @@ export function DevicesPage({ controller }) {
       h('p', { className: 'dsma-footnote' }, '原生 App 使用设备配对。Mobile Web 的登录二维码用于浏览器，两种二维码不可互换。隐藏二维码不会撤销已复制的资料；生成新码会替换未使用的旧码。')),
     h('button', { type: 'button', disabled: state.busy, onClick: controller.refresh }, '刷新设备状态'))
 }
+export function DevicesEntry({ createController }) {
+  const [controller, setController] = useState(null)
+  useEffect(() => {
+    const owned = createController()
+    setController(owned)
+    return () => owned.dispose()
+  }, [createController])
+  return controller ? h(DevicesPage, { controller }) : null
+}
 export function apply(ctx) {
-  const controller = createDeviceController({ call: createOperatorClient({ root: new URL('./', location.href).href }) })
+  const controllers = new Set()
+  const createController = () => {
+    const controller = createDeviceController({ call: createOperatorClient({ root: new URL('./', location.href).href }) })
+    const dispose = controller.dispose
+    controller.dispose = () => { controllers.delete(controller); dispose() }
+    controllers.add(controller)
+    return controller
+  }
   ctx.effect(() => {
     const style = document.createElement('style'); style.textContent = css; document.head.append(style)
-    return () => { style.remove(); controller.dispose() }
+    return () => { style.remove(); for (const controller of controllers) controller.dispose(); controllers.clear() }
   })
-  ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({ name: 'plugins.bundle.config', key: 'ds-bot-mobile-app', inject: () => ({ controller }) }, DevicesPage))
+  ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({ name: 'plugins.bundle.config', key: 'ds-bot-mobile-app', inject: () => ({ createController }) }, DevicesEntry))
+  // Keep device management reachable when a host shell or third-party market
+  // supplies a different route to the standard bundle-management page.
+  ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: 'ds-bot-mobile-app', order: 35, label: () => '移动设备', inject: () => ({ createController }) }, DevicesEntry))
 }

@@ -2117,6 +2117,7 @@ var require_browser = __commonJS({
 // src/client.mjs
 var client_exports = {};
 __export(client_exports, {
+  DevicesEntry: () => DevicesEntry,
   DevicesPage: () => DevicesPage,
   apply: () => apply,
   inject: () => inject
@@ -2313,18 +2314,39 @@ function DevicesPage({ controller }) {
     (0, import_react.createElement)("button", { type: "button", disabled: state.busy, onClick: controller.refresh }, "刷新设备状态")
   );
 }
+function DevicesEntry({ createController }) {
+  const [controller, setController] = (0, import_react.useState)(null);
+  (0, import_react.useEffect)(() => {
+    const owned = createController();
+    setController(owned);
+    return () => owned.dispose();
+  }, [createController]);
+  return controller ? (0, import_react.createElement)(DevicesPage, { controller }) : null;
+}
 function apply(ctx) {
-  const controller = createDeviceController({ call: createOperatorClient({ root: new URL("./", location.href).href }) });
+  const controllers = /* @__PURE__ */ new Set();
+  const createController = () => {
+    const controller = createDeviceController({ call: createOperatorClient({ root: new URL("./", location.href).href }) });
+    const dispose = controller.dispose;
+    controller.dispose = () => {
+      controllers.delete(controller);
+      dispose();
+    };
+    controllers.add(controller);
+    return controller;
+  };
   ctx.effect(() => {
     const style = document.createElement("style");
     style.textContent = style_default;
     document.head.append(style);
     return () => {
       style.remove();
-      controller.dispose();
+      for (const controller of controllers) controller.dispose();
+      controllers.clear();
     };
   });
-  ctx.slots.inject("plugins.bundle.config", () => ctx.slots.register({ name: "plugins.bundle.config", key: "ds-bot-mobile-app", inject: () => ({ controller }) }, DevicesPage));
+  ctx.slots.inject("plugins.bundle.config", () => ctx.slots.register({ name: "plugins.bundle.config", key: "ds-bot-mobile-app", inject: () => ({ createController }) }, DevicesEntry));
+  ctx.slots.inject("settings.section", () => ctx.slots.register({ name: "settings.section", id: "ds-bot-mobile-app", order: 35, label: () => "移动设备", inject: () => ({ createController }) }, DevicesEntry));
 }
 
 return Object.defineProperty({...module.exports},Symbol.toStringTag,{value:'Module'});

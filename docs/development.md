@@ -11,7 +11,7 @@ npm run audit
 npm run pack:bridge
 npm --prefix bridge run test:delivery -- ../artifacts/ds-bot-mobile-bridge-0.0.6.tgz
 npm run pack:companion
-npm --prefix companion run test:delivery -- ../artifacts/ds-bot-mobile-app-0.1.0.tgz
+npm --prefix companion run test:delivery -- ../artifacts/ds-bot-mobile-app-0.1.1.tgz
 ```
 
 最后一条路径相对于 bridge/。test:prepare 从公开 npm 下载固定 DSH 0.2.1-rc.2 和 DS Bot 0.1.7，只给 ignored fixture 内的副本应用审查补丁；保留原版拒绝测试。不接触用户 profile。动态端口与 HOME/DSH_HOME 相互隔离，测试结束清理子进程。
