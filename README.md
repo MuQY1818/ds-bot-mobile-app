@@ -18,11 +18,15 @@ DS Bot Mobile App 为自托管 [DeepSeek Harness](https://github.com/deepseek-ai
 
 ## 界面预览
 
+| 会话 | 单聊 | 群聊 |
+| :---: | :---: | :---: |
+| <img src="docs/images/iphone-conversations.png" width="260" alt="会话"> | <img src="docs/images/iphone-chat.png" width="260" alt="单聊"> | <img src="docs/images/iphone-group.png" width="260" alt="群聊"> |
+
 <p align="center">
-  <img src="docs/images/phone-access-app.png" width="500" alt="实际运行的电脑端手机访问 App 标签，显示连接服务与已授权设备">
+  <img src="docs/images/phone-access-app.png" width="500" alt="电脑端手机访问 App 标签与设备管理">
 </p>
 
-*实际部署的电脑端配套插件：在“手机访问 → App”中查看连接服务与已授权设备。本图裁剪至弹窗，未生成或展示配对二维码；不包含设备标识或访问凭据。这是电脑端界面，原生客户端的示例数据预览见[设计说明](docs/design.md)，不作为手机真机截图。*
+*iPhone 真机截图，会话使用示例数据。电脑端设备管理截图来自已安装运行的配套插件，未展示配对二维码或访问凭据。*
 
 ## 主要功能
 

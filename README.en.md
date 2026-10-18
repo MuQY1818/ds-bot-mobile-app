@@ -18,11 +18,15 @@ DS Bot Mobile App provides a native iOS / Android client and a separate desktop 
 
 ## Preview
 
+| Conversations | Direct messages | Group chat |
+| :---: | :---: | :---: |
+| <img src="docs/images/iphone-conversations.png" width="260" alt="Conversations"> | <img src="docs/images/iphone-chat.png" width="260" alt="Direct messages"> | <img src="docs/images/iphone-group.png" width="260" alt="Group chat"> |
+
 <p align="center">
-  <img src="docs/images/phone-access-app.png" width="500" alt="Running desktop App access panel showing service readiness and an authorized device">
+  <img src="docs/images/phone-access-app.png" width="500" alt="Desktop Phone access App tab and device management">
 </p>
 
-*The deployed desktop companion under **Phone access → App**, showing the connection service and authorized devices. Cropped to the dialog without generating or displaying a pairing QR; no device identifiers or credentials are included. This is the desktop interface. Native component previews with example data are in the [design notes](docs/design.md); they are not physical-phone screenshots.*
+*Captured on a physical iPhone with example conversations. The desktop device panel comes from the installed companion; pairing QR codes and access credentials are excluded.*
 
 ## Features
 
