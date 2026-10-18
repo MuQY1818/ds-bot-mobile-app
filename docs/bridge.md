@@ -1,55 +1,34 @@
-# DS Bot Mobile Bridge：配置与所有者接口
+# Mobile Bridge 配置与维护
 
-DS Bot Mobile Bridge 是标准 DSH bundle，为原生客户端提供设备配对与受限的团队访问。当前发布包为 `0.0.6`。包内英文说明见 [bridge/README.md](../bridge/README.md)，完整安装顺序见[安装指南](installation.md)。
+Mobile Bridge 是原生 App 的电脑端传输插件。只使用 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) 时无需安装。当前包为 `ds-bot-mobile-bridge-0.0.6.tgz`。
 
-## 配置
+## 配置顺序
 
-通过 DSH 插件管理器安装同次 Release 的 Bridge 包。选择 bundle 后，按 [cordis.patch.example.yml](../bridge/cordis.patch.example.yml)配置以下项目：
+1. 确认 DS Bot 提供兼容 Bridge 接口；原版 npm `0.1.7` 不包含所需接口，发布页提供明确标识的兼容包。
+2. 在现有 DSH 插件管理器安装并启用 Bridge。
+3. 按[配置示例](../bridge/cordis.patch.example.yml)设置专用存储和监听，由已有网络入口提供 HTTPS。
+4. 安装并启用 App 配套插件，在 **手机访问 → App** 刷新，确认“连接服务已就绪”。
 
-| 配置 | 用途 |
+## 必需参数
+
+| 参数 | 填写内容 |
 | --- | --- |
-| `enabled` | 显式启用服务；默认等待配置 |
-| `home` | 独立的绝对状态目录，与 `DSH_HOME` 分开 |
-| `host` / `port` | loopback 监听；反向代理使用固定可用端口，或读取状态中的分配端口 |
-| `publicUrl` | 你已经配置好的 HTTPS 入口 |
-| `allowedOrigins` | 需要允许的浏览器来源 |
-| `certPath` / `keyPath` | 可选的直接 TLS 证书与私钥路径 |
+| `enabled` | 明确设为 `true` |
+| `home` | 独立、长期保留的绝对目录，不与 DSH 数据目录混用 |
+| `host` / `port` | 建议只在 loopback 监听；代理目标必须对应实际端口 |
+| `publicUrl` | 手机可访问且证书可信的 HTTPS Bridge 地址 |
+| `allowedOrigins` | 按实际客户端来源设置，使用准确来源，不放开任意网站 |
 
-Bridge 复用既有 DS Bot。所需的 `bridge.describe`、稳定 `bridge.submit` 与 `bridge.redact` 接口必须存在；原版 npm DS Bot `0.1.7` 缺少这些接口。请明确选择本项目发布的兼容包。
+使用直接 TLS 时才需要自行提供 `certPath` / `keyPath`。Bridge 不创建隧道、证书、私网账户或公网域名。
 
-## 所有者操作
+## 配对与撤销
 
-电脑上的已认证所有者通过 DSH 的 `/mobile-operator` 通道管理设备。这是**宿主地址**上的 RPC；手机的 HTTPS Bridge 入口使用另一套协议。
+日常管理在电脑 **手机访问 → App** 完成。生成二维码后，手机发起请求，电脑核对名称并批准。要断开设备，在已授权列表撤销并确认。
 
-请求使用 `POST /mobile-operator/<method>`，`method` 与请求体中的字段保持一致：
+停用 App 配套插件只移除管理界面，已批准设备仍由 Bridge 管理。要停止整个传输服务，停用 Bridge。
 
-```json
-{
-  "type": "client-request",
-  "rpcId": "unique-request-id",
-  "method": "status",
-  "payload": {}
-}
-```
+## 更新和迁移
 
-| method | payload | 用途 |
-| --- | --- | --- |
-| `status` | `{}` | 查看配置、监听和设备状态 |
-| `pairing.create` | `{}` | 生成配对资料 |
-| `pairing.approve` | `{"requestId":"…"}` | 批准手机申请 |
-| `pairing.deny` | `{"requestId":"…"}` | 拒绝申请 |
-| `device.revoke` | `{"id":"…"}` | 撤销设备授权 |
+保留原 `home`，其中包含配对和回执身份。迁移旧 file-entry 时，先停用旧入口并释放端口，再以同一 `home` 启用标准包。不要同时运行两份实例使用同一状态目录。
 
-使用宿主现有的所有者认证会话；普通远程请求不能因此取得管理权限。配对资料、请求结果和设备凭据应只在本机受信任界面中处理。
-
-## Owner operations
-
-The authenticated computer owner manages devices through the host's `/mobile-operator` RPC channel. This is the **DSH host endpoint**, separate from the mobile Bridge origin.
-
-Send `POST /mobile-operator/<method>` using the JSON envelope above. The path and body `method` must match; each request uses a unique `rpcId`. Supported methods and payloads are listed in the table. Use the existing owner-authenticated host session; keep pairing results and device credentials private.
-
-## 能力与生命周期
-
-当前支持文字历史与完整消息提交事件、稳定回执及能力矩阵中列出的宿主操作。支持范围以[兼容与验证](validation.md)为准。
-
-停用 bundle 会释放监听与路由。保留 Bridge home 可继续保留配对和回执。迁移旧 file-entry 时，先停用旧入口并确认端口释放，再用同一 home 启用标准包。
+完整安装流程见[安装与配对](installation.md)。开发者接口见[所有者接口](bridge-api.md)，能力边界见[当前状态](status.md)。

@@ -1,15 +1,23 @@
 # DS Bot Mobile Bridge
 
-DS Bot Mobile App 的独立 DSH 桥接插件，版本 0.0.6。通过电脑所有者批准配对，让手机复用现有 Bot 团队。
+原生 App 的独立 DSH 设备认证与文字传输插件，当前版本 **0.0.6**。[English](README.md)
 
-通过正式插件管理器安装压缩包。默认不监听、不创建状态；需明确配置 enabled、独立绝对 home、loopback 端口和已有 HTTPS publicUrl。参考 cordis.patch.example.yml。不创建隧道、不放宽认证、不自动修改 DSH 或 DS Bot。
+仅使用手机浏览器时，请选择 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)，无需安装此包。
 
-DS Bot 需提供 bridge.describe、稳定 bridge.submit 和已知值 bridge.redact；原版 npm DS Bot 0.1.7 不满足可靠聊天要求。主仓库发布单独标识的兼容包，需明确选择安装。
+## 安装与配置
 
-所有者通过宿主认证的 /mobile-operator 使用 status、pairing.create、pairing.approve / pairing.deny（requestId）和 device.revoke（id）。请求 envelope 见 English README。不要记录或公开配对码、设备 token、真实二维码。
+在现有 DSH 的官方插件管理器安装 `ds-bot-mobile-bridge-0.0.6.tgz`。按 `cordis.patch.example.yml` 设置 `enabled`、专用绝对 `home`、loopback 端口和手机可达的 HTTPS `publicUrl`。Bridge 默认等待明确配置，不自行创建隧道、证书或团队。
 
-支持 Bot/群文字历史、完整消息提交事件、稳定回执、模型/effort、标记、Usage、own 记忆、日程创建/查看/删除及 user 排队查看/移除。逐 token、原生审批、媒体/语音、APNs 和群管理未提供。以主仓库的能力矩阵为准。
+DS Bot 必须提供 `bridge.describe`、稳定 `bridge.submit` 与 `bridge.redact`；原版 npm DS Bot `0.1.7` 不满足。项目发布页提供明确标识的兼容包。完整步骤见[安装指南](https://github.com/MuQY1818/ds-bot-mobile-app/blob/main/docs/installation.md)。
 
-测试先运行 npm ci --ignore-scripts、npm run test:prepare，再运行 npm test、npm run lint 和 npm run test:integration。fixture 只用公开固定版本、mock、动态端口和隔离 HOME/DSH_HOME。test:delivery 校验指定 tgz 的每个文件与真实所有者启停生命周期。
+安装 App 配套插件后，从电脑 **手机访问 → App** 生成配对码、批准手机或撤销设备。两插件独立启停。配对码和设备凭据只给自己的设备。
 
-停用释放监听和路由，保留 Bridge home 以保留配对与回执。迁移必须先释放旧 file-entry，再同端口启用标准包。来源及许可证见 LICENSE/NOTICE。
+## 当前能力
+
+Bot / 群文字历史、完整消息、稳定回执，以及宿主声明支持的模型、用量、记忆、日程和用户队列操作。逐 token、原生审批、媒体/语音、系统推送和群管理未提供。
+
+## 更新与停止
+
+停用 Bridge 会释放监听和路由。保留原 `home` 以保留配对与回执；迁移前先停用旧实例，避免同端口或同目录争用。
+
+开发、隔离测试和所有者接口见主仓库文档。Apache-2.0；来源及版权声明保留于 LICENSE / NOTICE。
