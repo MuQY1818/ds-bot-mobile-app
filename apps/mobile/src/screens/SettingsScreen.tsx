@@ -396,7 +396,7 @@ export function SettingsScreen({
             <Section
               title={tr("Paired devices")}
               footer={tr(
-                "To pair another device, generate a code in DSH → Settings → Mobile devices.",
+                "To pair another device, generate pairing data with DS Bot Mobile Bridge on your computer. See the project installation guide.",
               )}
             >
               {devices.map((device) => (

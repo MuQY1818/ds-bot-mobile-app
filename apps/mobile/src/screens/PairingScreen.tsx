@@ -156,11 +156,11 @@ export function PairingScreen({
         <Label>{tr("Connect your host")}</Label>
         <Label muted>
           {tr(
-            "On your computer, open Settings → Mobile devices, choose a reachable IPv4 or IPv6 address, and enable phone connection. Scan the code, then approve your phone on the computer.",
+            "This preview uses DS Bot Mobile Bridge. Follow the project installation guide to generate pairing data on your computer, scan it here, then approve your phone on the computer.",
           )}
         </Label>
         <Label muted>
-          {tr("Public IPv6 also works across networks when your phone supports IPv6 and both firewalls allow the connection.")}
+          {tr("Your phone must be able to reach the configured HTTPS endpoint with a trusted certificate. Keep the computer and Bridge running.")}
         </Label>
         <PairingScanner disabled={busy} onScan={(text) => { setRaw(text); void pair(text); }} />
         <Field

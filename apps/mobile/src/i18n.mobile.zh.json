@@ -664,5 +664,8 @@
   "Low": "低",
   "Medium": "中",
   "High": "高",
-  "Max": "最高"
+  "Max": "最高",
+  "This preview uses DS Bot Mobile Bridge. Follow the project installation guide to generate pairing data on your computer, scan it here, then approve your phone on the computer.": "本预览版使用 DS Bot Mobile Bridge。请按项目安装指南在电脑上生成配对资料，在此扫码后，再在电脑上批准手机连接。",
+  "Your phone must be able to reach the configured HTTPS endpoint with a trusted certificate. Keep the computer and Bridge running.": "手机必须能够访问已配置、证书可信的 HTTPS 入口。请保持电脑和 Bridge 运行。",
+  "To pair another device, generate pairing data with DS Bot Mobile Bridge on your computer. See the project installation guide.": "要配对其他设备，请按项目安装指南，通过电脑上的 DS Bot Mobile Bridge 生成配对资料。"
 }
