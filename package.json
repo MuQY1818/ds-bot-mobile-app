@@ -1,13 +1,16 @@
 {
   "name": "ds-bot-mobile-app-source",
   "private": true,
-  "version": "0.1.2-preview.1",
+  "version": "0.1.3-preview.1",
   "license": "Apache-2.0",
   "scripts": {
-    "setup": "npm --prefix apps/mobile ci --ignore-scripts && npm --prefix bridge ci --ignore-scripts",
-    "check": "npm --prefix apps/mobile run typecheck && npm --prefix apps/mobile test && npm --prefix packages/mobile-sdk test && npm --prefix bridge test && npm --prefix bridge run lint",
+    "setup": "npm --prefix apps/mobile ci --ignore-scripts && npm --prefix bridge ci --ignore-scripts && npm --prefix companion ci --ignore-scripts",
+    "check": "npm --prefix apps/mobile run typecheck && npm --prefix apps/mobile test && npm --prefix packages/mobile-sdk test && npm --prefix bridge test && npm --prefix bridge run lint && npm --prefix companion run check && npm --prefix companion run build",
     "check:bridge": "npm --prefix bridge run test:prepare && npm --prefix bridge run test:integration",
     "audit": "python3 scripts/audit-source.py",
-    "pack:bridge": "node scripts/pack-bridge.mjs"
+    "pack:bridge": "node scripts/pack-bridge.mjs",
+    "pack:companion": "node scripts/pack-companion.mjs",
+    "preview:companion": "node companion/test/fixture.mjs",
+    "check:companion": "npm --prefix companion run check && npm --prefix companion run build && npm --prefix companion run test:delivery"
   }
 }

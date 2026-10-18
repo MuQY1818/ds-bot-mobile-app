@@ -1,0 +1,48 @@
+{
+  "name": "ds-bot-mobile-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DS Bot Mobile App — desktop pairing and device management companion",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./client": "./client.js"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "index.mjs",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node --test test/*.test.mjs",
+    "test:delivery": "node test/delivery.mjs",
+    "fixture": "node test/fixture.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "qrcode": "1.5.4"
+  },
+  "homepage": "https://github.com/MuQY1818/ds-bot-mobile-app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MuQY1818/ds-bot-mobile-app.git",
+    "directory": "companion"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
