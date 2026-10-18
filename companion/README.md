@@ -2,7 +2,7 @@
 
 A standard DSH UI bundle for pairing and managing native App devices. The native client lives in `apps/mobile/`; authentication and transport belong to the separate `ds-bot-mobile-bridge` bundle.
 
-Install `ds-bot-mobile-app-0.1.1.tgz` using the official DSH plugin manager, enable it, then open **Settings → 移动设备 (Mobile devices)**. The **ds-bot-mobile-app bundle configuration** in the official Plugins sidebar remains a second entry. Both show Bridge status, pairing QR/JSON, pending requests and authorized devices. Scan with the native App and explicitly approve the matching request. Device revocation has an additional confirmation step. See the [installation guide](../docs/installation.md) for prerequisites and transport configuration.
+Install `ds-bot-mobile-app-0.2.0.tgz` using the official DSH plugin manager, enable it, then open **Phone access → App** from the DS Bot account menu. The official bundle configuration can open the same dialog. With Mobile Web 0.4.0 enabled, the dialog includes **Web / App** tabs; either plugin also works alone. Scan with the native App and explicitly approve the matching request. Device revocation has an additional confirmation step. See the [installation guide](../docs/installation.md) for prerequisites and transport configuration.
 
 Mobile Bridge must already be installed and configured. Missing or disabled Bridge is shown as a setup state. This companion does not create listeners, tunnels, credentials or a second Bot runtime. QR content stays in page memory; it is removed when explicitly hidden, expired or the page is left. Hiding a QR does not revoke an already copied code; codes expire after two minutes, and generating a new code replaces unused earlier codes.
 
@@ -29,7 +29,7 @@ Use `npm run fixture` for an explicitly persistent mock preview and `Ctrl+C` to 
 
 ## 中文
 
-此包是原生 App 的**电脑端配套插件**。在官方插件管理器安装并启用后，打开 **设置 → 移动设备**，即可查看 Bridge 状态、生成配对二维码、批准手机和撤销设备。官方主侧栏“插件 → 已安装”中本包的配置页也保留相同入口。它与手机 App 安装包、Mobile Web 登录二维码和 Bridge 传输插件分别承担不同职责。
+此包是原生 App 的**电脑端配套插件**。在官方插件管理器安装并启用后，打开账户菜单 **手机访问 → App**，即可生成配对二维码、批准手机和撤销设备。官方本包配置页可打开同一弹窗；与兼容的 Web 插件同时启用时显示 Web / App 标签。它与手机 App 安装包、Mobile Web 登录二维码和 Bridge 传输插件分别承担不同职责。
 
 安装前先准备兼容的 DS Bot 与独立 Bridge，并配置手机可达的 HTTPS。Bridge 尚未安装、启用或配置时，本页显示设置提示。停用或移除本插件会清理配对管理界面；已授权手机与 Bridge 的独立状态保留。要断开手机，在设备列表选择撤销并确认。
 

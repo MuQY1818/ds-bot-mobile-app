@@ -13,7 +13,7 @@ DS Bot 的移动访问分为三个独立的电脑端插件。它们使用 DSH �
 
 App 配套插件和 Bridge 在同一源码仓库维护，分别发布 `.tgz`。它们各自的版本与许可证清单写入包内 `package.json`；原生 App 的版本写入 `apps/mobile/app.json`。共享仓库不会将它们变成一个必须一起启停的插件。
 
-App 配套插件 0.1.1 起提供 **设置 → 移动设备** 独立入口，使用公开 `settings.section`，并保留官方主侧栏插件管理器中的 `plugins.bundle.config`。两个入口呈现相同设备管理页，使用相同的所有者权限；第三方市场没有渲染 bundle 配置区时，仍可从设置进入。
+App 配套插件 `0.2.0` 和 Mobile Web `0.4.0` 共用账户菜单中的 **手机访问** 入口。双启用时弹窗显示 **Web / App** 标签；只启用其中一个时仅显示对应方式。两个包保留独立版本、配置、认证接口和生命周期，Bridge 继续作为第三个插件。官方 `plugins.bundle.config` 页面提供打开同一弹窗的备用按钮。旧 `0.1.1` 的“移动设备”设置页被统一弹窗取代。
 
 ## 访问链路
 
@@ -48,8 +48,14 @@ Web 使用宿主浏览器认证，App 使用单独批准的设备身份。两种
 
 The three desktop bundles are independently installable: **Mobile Web** supplies the browser interface, **Mobile App** supplies desktop pairing/device management, and **Mobile Bridge** supplies device authentication and transport. The native iOS / Android App remains a separate client. App companion and Bridge share a source repository but have separate package manifests, versions and archives.
 
-Companion 0.1.1 adds **Settings → 移动设备 (Mobile devices)** through public `settings.section` and keeps the official `plugins.bundle.config` entry. Both present the same owner-authenticated device management page, including when a third-party market does not render bundle configuration.
+Companion `0.2.0` and Mobile Web `0.4.0` share **Phone access** in the account menu. Both enabled: **Web / App** tabs. Either enabled alone: its own mode remains available. Packages, versions, configuration and authentication remain independent; Bridge stays a separate transport bundle. The official bundle configuration opens the same dialog. The previous standalone Mobile devices settings page is replaced by this compact flow.
 
 Web uses host browser authentication and requires neither App nor Bridge. The native App uses owner-approved device credentials and does not require Mobile Web. Disabling or removing App companion cleans up its UI without owning the Bridge listener or deleting authorization state. Disabling Bridge stops transport; re-enabling with the same dedicated state directory retains the host identity and authorized devices. Revocation is an explicit owner action. Hiding a QR code clears only its display; unused codes expire after two minutes and a new code replaces earlier unused codes.
 
 Only public DSH bundle/slot/Connection/WebServer APIs are used. No DSH core patch or second Bot runtime is introduced. Automated fixture evidence, local deployment evidence and physical-device acceptance have separate scopes; see [validation](validation.md).
+
+## 共享入口协议
+
+两包包含相同的 `mobile-access-registry.mjs`、`mobile-access-shell.mjs` 与样式；浏览器通过版本化 `Symbol.for('ds-bot.mobile-access.v1')` 协调 provider。registry 只保存标签、渲染函数和导航状态，不接收二维码或凭据。确定性 leader 负责唯一菜单和弹窗，leader 停用时剩余包接管；最后一个包停用后清空 registry、菜单、样式和监听。切换标签会卸载旧模式，由各模式取消请求并清理页面内凭据。
+
+新统一入口版本应配套升级；更早的包没有共享入口协议，混用旧版仍可能显示旧入口。认证流程保持分别处理，Web 登录码不用于 App 配对。

@@ -1,8 +1,8 @@
 {
   "name": "ds-bot-mobile-app",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
-  "description": "DS Bot Mobile App — desktop pairing and device management companion",
+  "description": "DS Bot Mobile App \u2014 desktop pairing and device management companion",
   "license": "Apache-2.0",
   "type": "module",
   "main": "index.mjs",

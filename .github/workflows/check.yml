@@ -20,5 +20,5 @@ jobs:
       - run: npm --prefix bridge run test:delivery -- ../artifacts/ds-bot-mobile-bridge-0.0.6.tgz
       - run: npm run audit
       - run: npm run pack:companion
-      - run: npm --prefix companion run test:delivery -- ../artifacts/ds-bot-mobile-app-0.1.1.tgz
+      - run: npm --prefix companion run test:delivery -- ../artifacts/ds-bot-mobile-app-0.2.0.tgz
       - run: npm run audit

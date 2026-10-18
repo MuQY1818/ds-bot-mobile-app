@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml"><img src="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml/badge.svg?branch=main" alt="Build and checks"></a>
-  <a href="https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.2"><img src="https://img.shields.io/badge/source-0.1.3--preview.2-blue" alt="Source preview 0.1.3-preview.2"></a>
+  <a href="https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.3"><img src="https://img.shields.io/badge/source-0.1.3--preview.3-blue" alt="Source preview 0.1.3-preview.3"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0 license"></a>
 </p>
 
@@ -14,7 +14,7 @@
 
 DS Bot Mobile App provides a native iOS / Android client and a separate desktop companion plugin for self-hosted [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) and [DS Bot](https://github.com/Fei2411/DeepSeek-Bot). The desktop plugin manages pairing and devices; **DS Bot Mobile Bridge** handles authentication and transport. Models and tools continue running on the computer.
 
-> **Source preview**: `0.1.3-preview.2` contains native App `0.1.3` and desktop companion `0.1.1`; Mobile Bridge remains at `0.0.6`. Companion and Bridge are packaged, installed and enabled independently. **Signed IPA/APK builds are not available**; build the native client with your own platform toolchain. Browser access is provided by [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web).
+> **Source preview**: `0.1.3-preview.3` contains native App `0.1.3` and desktop companion `0.2.0`; Mobile Bridge remains at `0.0.6`. Companion and Bridge are packaged, installed and enabled independently. **Signed IPA/APK builds are not available**; build the native client with your own platform toolchain. Browser access is provided by [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web).
 
 ## Preview
 
@@ -31,7 +31,7 @@ DS Bot Mobile App provides a native iOS / Android client and a separate desktop 
 - **Existing conversations**: access Bots and groups, exchange text and read attributed member replies.
 - **Native interaction**: screen navigation, back gestures, message scrolling, character avatars, light/dark themes and English/Chinese interfaces.
 - **Device authorization**: pairing approved by the computer owner, with individual device revocation.
-- **Desktop pairing management**: generate QR codes, review pending requests and authorized devices, and confirm device revocation under **Settings → 移动设备 (Mobile devices)**. The standard bundle configuration page remains available.
+- **Desktop pairing management**: generate QR codes, review pending requests and authorized devices, and confirm device revocation under **Phone access → App** in the account menu. Compatible Web and App plugins contribute to the same dialog; the standard bundle page can also open it.
 - **Reconnection and drafts**: synchronize history after reconnecting, retain local drafts and let the user decide when to send.
 - **Host controls**: models and reasoning effort, conversation flags, Usage, own memory, schedule creation/listing/deletion and viewing/removing your own queued input.
 
@@ -59,6 +59,8 @@ App companion and Bridge share this repository and ship as separate `.tgz` packa
 
 Bridge waits for owner configuration. Configure dedicated storage and HTTPS, then approve pairing on the computer. Message caches and drafts live on the client; device credentials use the platform's secure store.
 
+![App device management in unified phone access, with a synthetic test device](docs/images/phone-access-app.png)
+
 ## Development status
 
 Bridge text transport and desktop pairing management are implemented and checked against isolated hosts. The native client remains a developer source preview; signed distribution and the full physical-device matrix remain incomplete. See [Development status](docs/status.md).
@@ -71,17 +73,17 @@ Bridge text transport and desktop pairing management are implemented and checked
 | --- | --- |
 | Host | DSH `0.2.1-rc.2` and a compatible DS Bot package |
 | Bridge | `ds-bot-mobile-bridge-0.0.6.tgz` from the same release |
-| App companion | `ds-bot-mobile-app-0.1.1.tgz` for desktop device management |
+| App companion | `ds-bot-mobile-app-0.2.0.tgz` for desktop device management |
 | Network | Phone-accessible HTTPS with a trusted certificate |
 | Development | Git, Node.js 24 and npm; Python 3 for the source audit |
 | iOS build | macOS and Xcode; your own signing identity for a device |
 | Android build | Android SDK and its build toolchain |
 
-**Compatibility prerequisite**: Bridge requires `bridge.describe`, stable `bridge.submit` and `bridge.redact` interfaces. The pristine npm DS Bot `0.1.7` does not provide them. This project's [release](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.2) includes a separately identified `ds-bot-0.1.7-codex.1.tgz`. See [installation](docs/installation.md) for profile selection and migration.
+**Compatibility prerequisite**: Bridge requires `bridge.describe`, stable `bridge.submit` and `bridge.redact` interfaces. The pristine npm DS Bot `0.1.7` does not provide them. This project's [release](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.3) includes a separately identified `ds-bot-0.1.7-codex.1.tgz`. See [installation](docs/installation.md) for profile selection and migration.
 
 ### 1. Prepare the computer
 
-Download the compatible DS Bot, Bridge and App companion packages with their checksum files. Verify the archives, then install each through the existing DSH plugin manager. Configure dedicated storage, the listener and HTTPS using the [Bridge example](bridge/cordis.patch.example.yml). Enable `ds-bot-mobile-app`, open **Settings → 移动设备 (Mobile devices)** and confirm **Bridge 已连接** before generating a pairing QR code. The bundle configuration page in the official Plugins sidebar offers the same functions. See [installation](docs/installation.md).
+Download the compatible DS Bot, Bridge and App companion packages with their checksum files. Verify the archives, then install each through the existing DSH plugin manager. Configure dedicated storage, the listener and HTTPS using the [Bridge example](bridge/cordis.patch.example.yml). Enable `ds-bot-mobile-app`, open **Phone access → App** from the account menu and confirm the service is ready before generating a pairing QR code. The official bundle configuration page can open the same dialog. See [installation](docs/installation.md).
 
 ### 2. Build the client
 

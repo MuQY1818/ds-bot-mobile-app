@@ -2117,13 +2117,14 @@ var require_browser = __commonJS({
 // src/client.mjs
 var client_exports = {};
 __export(client_exports, {
+  CompanionSettings: () => CompanionSettings,
   DevicesEntry: () => DevicesEntry,
   DevicesPage: () => DevicesPage,
   apply: () => apply,
   inject: () => inject
 });
 module.exports = __toCommonJS(client_exports);
-var import_react = require("react");
+var import_react2 = require("react");
 var import_qrcode = __toESM(require_browser(), 1);
 
 // src/operator-client.mjs
@@ -2256,20 +2257,283 @@ function createDeviceController({ call, now = Date.now }) {
 }
 
 // src/style.css
-var style_default = '.dsma-page{--dsma-ink:var(--bt-ink,#171717);--dsma-muted:var(--bt-ink-2,#666);--dsma-line:var(--bt-line-2,#dedede);--dsma-bg:var(--bt-main,#fff);--dsma-card:var(--bt-card,#fafafa);max-width:760px;color:var(--dsma-ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}\n.dsma-page *{box-sizing:border-box}.dsma-page h2{font-size:25px;line-height:1.3;margin:0 0 8px;font-weight:650;letter-spacing:-.5px}.dsma-page h3{font-size:17px;margin:0 0 8px}.dsma-page p{margin:0 0 14px;color:var(--dsma-muted)}\n.dsma-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}.dsma-badge{white-space:nowrap;border-radius:99px;background:var(--dsma-card);padding:5px 10px;font-size:12px}.dsma-badge[data-ready=true]{color:var(--dsma-ink);border:1px solid var(--dsma-line)}\n.dsma-card{padding:22px;border:1px solid var(--dsma-line);border-radius:20px;margin:0 0 18px;background:var(--dsma-bg)}.dsma-page button{min-height:44px;border:1px solid var(--dsma-line);border-radius:12px;padding:9px 15px;font:inherit;color:var(--dsma-ink);background:var(--dsma-card);cursor:pointer}.dsma-page button:disabled{opacity:.5;cursor:default}.dsma-page button.dsma-primary{background:var(--dsma-ink);color:var(--dsma-bg);border-color:transparent}.dsma-page :focus-visible{outline:2px solid var(--bt-accent,#4d6bfe);outline-offset:3px}.dsma-actions{display:flex;flex-wrap:wrap;gap:10px}\n.dsma-pairing{display:flex;flex-direction:column;align-items:center;gap:12px;padding-top:8px}.dsma-qr{width:220px;max-width:100%;height:auto;background:#fff;border-radius:10px}.dsma-pairing details{width:100%;color:var(--dsma-muted)}.dsma-page summary{cursor:pointer;min-height:44px;padding:10px 0}.dsma-page textarea{display:block;width:100%;min-height:110px;padding:12px;border:1px solid var(--dsma-line);border-radius:12px;background:var(--dsma-card);color:var(--dsma-ink);font:13px/1.5 ui-monospace,monospace;resize:vertical}.dsma-device{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:16px 0;border-top:1px solid var(--dsma-line)}.dsma-device>span{font-size:12px;color:var(--dsma-muted)}.dsma-device>.dsma-actions{margin-top:6px}.dsma-confirm{margin-top:4px}.dsma-confirm p{font-size:13px;margin:0 0 8px}.dsma-footnote{font-size:12px}.dsma-page .dsma-error{padding:12px 14px;background:var(--dsma-card);border-left:3px solid #b44425;border-radius:8px;color:var(--dsma-ink)}.dsma-card>a{display:inline-block;margin-bottom:14px;margin-right:14px;color:inherit;text-underline-offset:3px}\n@media(max-width:540px){.dsma-heading{flex-direction:column;gap:8px}.dsma-card{padding:18px}.dsma-heading h2{font-size:23px}}\n';
+var style_default = '.dsma-page{--dsma-ink:var(--bt-ink,#171717);--dsma-muted:var(--bt-ink-2,#666);--dsma-line:var(--bt-line,#e8e8e8);--dsma-bg:var(--bt-main,#fff);--dsma-surface:var(--bt-bubble,#f2f2f2);width:100%;min-width:0;color:var(--dsma-ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}\n.dsma-page *{box-sizing:border-box}.dsma-page h3{font-size:14px;line-height:22px;margin:0;font-weight:600}.dsma-page p{margin:6px 0 0;color:var(--dsma-muted);font-size:13px}.dsma-state-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px}.dsma-state{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dsma-muted)}.dsma-state i{width:7px;height:7px;border-radius:50%;background:currentColor}.dsma-state[data-ready=true] i{background:var(--bt-green,#00865b)}\n.dsma-page button{min-height:36px;border:1px solid var(--dsma-line);border-radius:9px;padding:7px 12px;font:inherit;font-size:13px;color:var(--dsma-ink);background:var(--dsma-bg);cursor:pointer;touch-action:manipulation}.dsma-page button:hover{background:var(--dsma-surface)}.dsma-page button:disabled{opacity:.5;cursor:default}.dsma-page button.dsma-primary{background:var(--dsma-ink);color:var(--dsma-bg);border-color:transparent;font-weight:500}.dsma-page button.dsma-primary:hover{opacity:.85}.dsma-page button.dsma-text-button{border-color:transparent;color:var(--dsma-muted);background:transparent}.dsma-page button.dsma-icon-button{display:grid;place-items:center;min-width:32px;min-height:32px;padding:5px;border-color:transparent;background:transparent;color:var(--dsma-muted)}.dsma-page button.dsma-danger{color:var(--bt-danger,#b42318)}.dsma-page :focus-visible{outline:2px solid var(--bt-accent,#4d6bfe);outline-offset:3px}.dsma-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}\n.dsma-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.dsma-add{padding:0 0 22px}.dsma-section{border-top:1px solid var(--dsma-line);padding:18px 0 6px}.dsma-section>h3{display:flex;align-items:center;gap:7px;margin-bottom:6px}.dsma-count{color:var(--dsma-muted);font-size:12px;font-weight:400}.dsma-device{display:flex;align-items:center;gap:12px;padding:12px 0;min-width:0;flex-wrap:wrap}.dsma-device+.dsma-device{border-top:1px solid var(--dsma-line)}.dsma-device-icon{width:38px;height:42px;display:grid;place-items:center;flex:none;border-radius:10px;background:var(--dsma-surface);color:var(--dsma-muted)}.dsma-device-copy{flex:1;min-width:100px}.dsma-device-copy strong{display:block;font-size:14px;font-weight:550;overflow-wrap:anywhere}.dsma-device-copy small{display:block;font-size:12px;color:var(--dsma-muted);margin-top:3px}.dsma-confirm{flex-basis:100%;padding:10px 12px;background:var(--dsma-surface);border-radius:10px}.dsma-confirm p{margin:0 0 8px}.dsma-page .dsma-empty{margin:10px 0 12px}.dsma-notes{margin-top:12px;font-size:12px;color:var(--dsma-muted)}.dsma-page summary{cursor:pointer;min-height:32px;padding:6px 0}.dsma-notes p{font-size:12px;margin-top:3px}\n.dsma-pairing{display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0 0}.dsma-qr{width:204px;max-width:100%;height:auto;background:#fff;border-radius:8px}.dsma-pairing p{font-size:12px;margin:0}.dsma-pairing details{width:100%;color:var(--dsma-muted);font-size:12px}.dsma-page textarea{display:block;width:100%;min-height:100px;padding:10px;border:1px solid var(--dsma-line);border-radius:8px;background:var(--dsma-surface);color:var(--dsma-ink);font:12px/1.5 ui-monospace,monospace;resize:vertical;overflow-wrap:anywhere}.dsma-page .dsma-error{margin:0 0 14px;padding:10px 12px;border-radius:8px;background:var(--dsma-surface);color:var(--bt-danger,#b42318)}.dsma-setup{padding:4px 0 16px}.dsma-setup a{display:inline-block;margin-top:12px;color:inherit;text-underline-offset:3px}\n@media(max-width:540px){.dsma-page button{min-height:44px}.dsma-page button.dsma-icon-button{min-width:44px;min-height:44px}.dsma-section-head{align-items:flex-start;flex-wrap:wrap;gap:8px}.dsma-page textarea{font-size:16px}}\n';
+
+// src/mobile-access-registry.mjs
+var REGISTRY_KEY = /* @__PURE__ */ Symbol.for("ds-bot.mobile-access.v1");
+function createMobileAccessRegistry({ onEmpty = () => {
+} } = {}) {
+  const providers = /* @__PURE__ */ new Map(), listeners = /* @__PURE__ */ new Set();
+  let serial = 0;
+  let state = Object.freeze({ open: false, activeId: null, leader: null, providers: Object.freeze([]) });
+  const notify = () => {
+    for (const listener of [...listeners]) listener();
+  };
+  const publish = (patch) => {
+    if (Object.entries(patch).every(([key, value]) => state[key] === value)) return;
+    state = Object.freeze({ ...state, ...patch });
+    notify();
+  };
+  const rebuild = () => {
+    const available = Object.freeze([...providers.values()].map((entry) => entry.provider).sort((a, b) => a.order - b.order || a.id.localeCompare(b.id)));
+    const activeId = available.some((entry) => entry.id === state.activeId) ? state.activeId : available[0]?.id ?? null;
+    publish({ providers: available, leader: available[0]?.id ?? null, activeId, open: available.length > 0 && state.open });
+  };
+  const store = Object.freeze({
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    getSnapshot: () => state,
+    // An ordinary account-menu open preserves the last selected available mode.
+    open(id = state.activeId) {
+      if (!providers.has(id)) return false;
+      publish({ open: true, activeId: id });
+      return true;
+    },
+    close() {
+      publish({ open: false });
+    },
+    select(id) {
+      if (!providers.has(id)) return false;
+      publish({ activeId: id });
+      return true;
+    }
+  });
+  return Object.freeze({
+    version: 1,
+    store,
+    register({ id, label, order = 0, render }) {
+      if (typeof id !== "string" || !id.trim() || typeof label !== "string" || !label.trim() || typeof render !== "function" || !Number.isFinite(order)) {
+        throw new TypeError("A mobile access provider needs an id, label, finite order and render function.");
+      }
+      const token = Symbol(id);
+      const provider = Object.freeze({ id, label, order, render, instance: ++serial });
+      providers.set(id, { token, provider });
+      rebuild();
+      let disposed = false;
+      const isCurrent = () => !disposed && providers.get(id)?.token === token;
+      return Object.freeze({
+        id,
+        store,
+        isCurrent,
+        open() {
+          return isCurrent() ? store.open(id) : false;
+        },
+        dispose() {
+          if (disposed) return;
+          const current = isCurrent();
+          disposed = true;
+          if (!current) return;
+          providers.delete(id);
+          rebuild();
+          if (!providers.size) {
+            listeners.clear();
+            onEmpty();
+          }
+        }
+      });
+    }
+  });
+}
+function registerMobileAccessProvider(provider) {
+  let registry = globalThis[REGISTRY_KEY];
+  if (!registry) {
+    registry = createMobileAccessRegistry({ onEmpty() {
+      if (globalThis[REGISTRY_KEY] === registry) delete globalThis[REGISTRY_KEY];
+    } });
+    const access = registry.register(provider);
+    Object.defineProperty(globalThis, REGISTRY_KEY, { value: registry, configurable: true });
+    return access;
+  }
+  if (registry.version !== 1 || typeof registry.register !== "function") throw new Error("Incompatible mobile access registry.");
+  return registry.register(provider);
+}
+
+// src/mobile-access-shell.mjs
+var import_react = require("react");
+var import_react_dom = require("react-dom");
+
+// src/mobile-access.css
+var mobile_access_default = '.dsb-access-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.3);backdrop-filter:blur(4px);color:var(--bt-ink,#171717);font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif}\n.dsb-access-dialog{display:flex;flex-direction:column;box-sizing:border-box;width:500px;max-width:100%;max-height:calc(100dvh - 48px);overflow:hidden;padding:24px;border:1px solid var(--bt-line,rgba(20,20,20,.08));border-radius:24px;background:var(--bt-main,#fff);box-shadow:0 22px 80px rgba(0,0,0,.2)}\n.dsb-access-dialog *{box-sizing:border-box}.dsb-access-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none}.dsb-access-heading>div{display:flex;align-items:center;gap:10px}.dsb-access-heading h1{margin:0;font-size:21px;line-height:30px;font-weight:650;letter-spacing:-.4px}\n.dsb-access-close{display:grid;place-items:center;flex:none;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer}.dsb-access-close:hover{background:var(--bt-hover,#f0f0f0)}\n.dsb-access-description{flex:none;margin:8px 0 22px;color:var(--bt-ink-2,#666);font-size:14px;line-height:22px}.dsb-access-tabs{display:flex;flex:none;gap:4px;margin:0 0 20px;padding:4px;border-radius:14px;background:var(--bt-hover,#f1f1f1)}\n.dsb-access-tabs>button{flex:1;min-width:0;min-height:40px;padding:8px 14px;border:0;border-radius:11px;background:transparent;color:var(--bt-ink-2,#666);font:inherit;font-weight:550;cursor:pointer}.dsb-access-tabs>button[aria-selected=true]{background:var(--bt-main,#fff);color:var(--bt-ink,#171717);box-shadow:0 1px 4px rgba(0,0,0,.07)}\n.dsb-access-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;overflow-wrap:anywhere;scrollbar-width:thin;padding:0 2px 2px;outline-offset:-2px}.dsb-access-dialog :focus-visible{outline:2px solid var(--bt-accent,#4d6bfe);outline-offset:2px}.dsb-access-body:focus-visible{outline-offset:-2px}\n@media(max-width:560px){.dsb-access-backdrop{padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}.dsb-access-dialog{width:100%;max-height:calc(100dvh - max(24px,env(safe-area-inset-top) + env(safe-area-inset-bottom)));padding:20px;border-radius:22px}.dsb-access-heading h1{font-size:20px}.dsb-access-description{font-size:13px;margin-bottom:18px}.dsb-access-tabs{margin-bottom:18px}}\n@media(prefers-reduced-motion:reduce){.dsb-access-dialog *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}\n';
+
+// src/mobile-access-shell.mjs
+function PhoneIcon() {
+  return (0, import_react.createElement)(
+    "svg",
+    { viewBox: "0 0 24 24", width: 21, height: 21, fill: "none", stroke: "currentColor", strokeWidth: 1.7, "aria-hidden": true },
+    (0, import_react.createElement)("rect", { x: 6, y: 2.5, width: 12, height: 19, rx: 3 }),
+    (0, import_react.createElement)("path", { d: "M10 18h4" })
+  );
+}
+function AccountEntry({ store }) {
+  const [container, setContainer] = (0, import_react.useState)(null);
+  (0, import_react.useEffect)(() => {
+    let owned;
+    const sync = () => {
+      const menu = document.querySelector(".bt-account-menu");
+      if (owned?.parentElement === menu) return;
+      owned?.remove();
+      owned = void 0;
+      if (menu) {
+        owned = document.createElement("div");
+        owned.dataset.dsbMobileAccessEntry = "true";
+        owned.style.display = "contents";
+        menu.insertBefore(owned, menu.querySelector("[role=separator]"));
+      }
+      setContainer(owned ?? null);
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { childList: true });
+    sync();
+    return () => {
+      observer.disconnect();
+      owned?.remove();
+    };
+  }, []);
+  if (!container) return null;
+  return (0, import_react_dom.createPortal)((0, import_react.createElement)("button", {
+    type: "button",
+    role: "menuitem",
+    className: "dsb-access-menu-entry",
+    onClick() {
+      document.querySelector(".bt-account[aria-expanded=true]")?.click();
+      store.open();
+    }
+  }, (0, import_react.createElement)(PhoneIcon), (0, import_react.createElement)("span", { className: "bt-menu-label" }, "手机访问")), container);
+}
+function ProviderContent({ provider }) {
+  return provider.render();
+}
+function AccessDialog({ store, state }) {
+  const root = (0, import_react.useRef)(null), closeButton = (0, import_react.useRef)(null), tabs = (0, import_react.useRef)(null);
+  const uid = (0, import_react.useId)();
+  const active = state.providers.find((provider) => provider.id === state.activeId);
+  (0, import_react.useEffect)(() => {
+    const previous = document.activeElement;
+    closeButton.current?.focus();
+    const onKey = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        store.close();
+        return;
+      }
+      if (event.key !== "Tab" || !root.current) return;
+      const controls = [...root.current.querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],summary,[tabindex]:not([tabindex="-1"])')].filter((node) => node.tabIndex >= 0 && node.getClientRects().length && !node.closest("[inert],[hidden]"));
+      const first = controls[0], last = controls.at(-1);
+      if (!root.current.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first)?.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    const onFocus = (event) => {
+      if (root.current && !root.current.contains(event.target)) closeButton.current?.focus();
+    };
+    document.addEventListener("keydown", onKey, true);
+    document.addEventListener("focusin", onFocus);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      document.removeEventListener("focusin", onFocus);
+      if (previous?.isConnected && previous !== document.body) previous.focus();
+      else document.querySelector(".bt-account")?.focus();
+    };
+  }, [store]);
+  const onTabKey = (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const all = [...tabs.current.querySelectorAll("[role=tab]")];
+    const current = Math.max(0, all.indexOf(event.target));
+    const next = event.key === "Home" ? 0 : event.key === "End" ? all.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + all.length) % all.length;
+    const provider = state.providers[next];
+    if (provider) {
+      store.select(provider.id);
+      all[next]?.focus();
+    }
+  };
+  return (0, import_react_dom.createPortal)((0, import_react.createElement)("div", {
+    className: "dsb-access-backdrop",
+    onMouseDown(event) {
+      if (event.target === event.currentTarget) store.close();
+    }
+  }, (0, import_react.createElement)(
+    "section",
+    { ref: root, className: "dsb-access-dialog", role: "dialog", "aria-modal": true, "aria-labelledby": `${uid}-heading`, "aria-describedby": `${uid}-description` },
+    (0, import_react.createElement)(
+      "header",
+      { className: "dsb-access-heading" },
+      (0, import_react.createElement)("div", null, (0, import_react.createElement)(PhoneIcon), (0, import_react.createElement)("h1", { id: `${uid}-heading` }, "手机访问")),
+      (0, import_react.createElement)(
+        "button",
+        { ref: closeButton, type: "button", className: "dsb-access-close", "aria-label": "关闭手机访问", onClick: () => store.close() },
+        (0, import_react.createElement)("svg", { viewBox: "0 0 24 24", width: 21, height: 21, fill: "none", stroke: "currentColor", strokeWidth: 1.8, "aria-hidden": true }, (0, import_react.createElement)("path", { d: "m6 6 12 12M18 6 6 18" }))
+      )
+    ),
+    (0, import_react.createElement)("p", { id: `${uid}-description`, className: "dsb-access-description" }, "在手机上接着聊，继续使用同一支 Bot 团队。"),
+    (0, import_react.createElement)(
+      "div",
+      { ref: tabs, role: "tablist", "aria-label": "手机访问方式", className: "dsb-access-tabs", onKeyDown: onTabKey },
+      ...state.providers.map((provider) => (0, import_react.createElement)("button", {
+        key: provider.id,
+        id: `${uid}-tab-${provider.id}`,
+        type: "button",
+        role: "tab",
+        "aria-selected": provider.id === state.activeId,
+        "aria-controls": `${uid}-panel`,
+        tabIndex: provider.id === state.activeId ? 0 : -1,
+        onClick: () => store.select(provider.id)
+      }, provider.label))
+    ),
+    (0, import_react.createElement)(
+      "div",
+      { className: "dsb-access-body", id: `${uid}-panel`, role: "tabpanel", "aria-labelledby": `${uid}-tab-${state.activeId}`, tabIndex: 0 },
+      active ? (0, import_react.createElement)(ProviderContent, { key: `${active.id}:${active.instance}`, provider: active }) : null
+    )
+  )), document.body);
+}
+function LeaderHost({ store, state }) {
+  (0, import_react.useEffect)(() => {
+    const style = document.createElement("style");
+    style.dataset.dsbMobileAccess = "true";
+    style.textContent = mobile_access_default;
+    document.head.append(style);
+    return () => style.remove();
+  }, []);
+  return (0, import_react.createElement)("div", { className: "dsb-access-host" }, (0, import_react.createElement)(AccountEntry, { store }), state.open ? (0, import_react.createElement)(AccessDialog, { store, state }) : null);
+}
+function MobileAccessHost({ access }) {
+  const state = (0, import_react.useSyncExternalStore)(access.store.subscribe, access.store.getSnapshot, access.store.getSnapshot);
+  if (state.leader !== access.id || !access.isCurrent()) return null;
+  return (0, import_react.createElement)(LeaderHost, { store: access.store, state });
+}
 
 // src/client.mjs
 var inject = ["slots"];
 function PairingQR({ data }) {
-  const qr = (0, import_react.useMemo)(() => import_qrcode.default.create(JSON.stringify(data), { errorCorrectionLevel: "M" }), [data]);
+  const qr = (0, import_react2.useMemo)(() => import_qrcode.default.create(JSON.stringify(data), { errorCorrectionLevel: "M" }), [data]);
   const n = qr.modules.size, cells = [];
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (qr.modules.get(y, x)) cells.push(`M${x + 4} ${y + 4}h1v1h-1z`);
-  return (0, import_react.createElement)("svg", { className: "dsma-qr", viewBox: `0 0 ${n + 8} ${n + 8}`, role: "img", "aria-label": "App 设备配对二维码", shapeRendering: "crispEdges" }, (0, import_react.createElement)("rect", { width: n + 8, height: n + 8, fill: "#fff" }), (0, import_react.createElement)("path", { d: cells.join(""), fill: "#000" }));
+  return (0, import_react2.createElement)("svg", { className: "dsma-qr", viewBox: `0 0 ${n + 8} ${n + 8}`, role: "img", "aria-label": "App 设备配对二维码", shapeRendering: "crispEdges" }, (0, import_react2.createElement)("rect", { width: n + 8, height: n + 8, fill: "#fff" }), (0, import_react2.createElement)("path", { d: cells.join(""), fill: "#000" }));
+}
+function DeviceIcon({ refresh = false }) {
+  return (0, import_react2.createElement)(
+    "svg",
+    { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, "aria-hidden": true },
+    refresh ? (0, import_react2.createElement)("path", { d: "M20 7v5h-5M4 17v-5h5M6.1 6.1A8 8 0 0 1 20 12M4 12a8 8 0 0 0 13.9 5.9", strokeLinecap: "round", strokeLinejoin: "round" }) : (0, import_react2.createElement)("rect", { x: 6, y: 2.5, width: 12, height: 19, rx: 3 }),
+    !refresh ? (0, import_react2.createElement)("path", { d: "M10 18h4", strokeLinecap: "round" }) : null
+  );
 }
 function DevicesPage({ controller }) {
-  const state = (0, import_react.useSyncExternalStore)(controller.subscribe, controller.snapshot, controller.snapshot);
-  const [showManual, setShowManual] = (0, import_react.useState)(false);
-  (0, import_react.useEffect)(() => {
+  const state = (0, import_react2.useSyncExternalStore)(controller.subscribe, controller.snapshot, controller.snapshot);
+  const [showManual, setShowManual] = (0, import_react2.useState)(false);
+  (0, import_react2.useEffect)(() => {
     void controller.refresh();
     const timer = setInterval(() => {
       controller.tick();
@@ -2289,39 +2553,42 @@ function DevicesPage({ controller }) {
     };
   }, [controller]);
   const status = state.status, enabled = status?.enabled === true;
-  return (0, import_react.createElement)(
+  const devices = (status?.devices ?? []).filter((item) => !item.revokedAt), pending = status?.pending ?? [];
+  return (0, import_react2.createElement)(
     "section",
-    { className: "dsma-page", "aria-label": "DS Bot Mobile App 设备管理" },
-    (0, import_react.createElement)("div", { className: "dsma-heading" }, (0, import_react.createElement)("div", null, (0, import_react.createElement)("h2", null, "连接你的手机"), (0, import_react.createElement)("p", null, "配对原生 App，在手机上继续使用同一支 Bot 团队。")), (0, import_react.createElement)("span", { className: "dsma-badge", "data-ready": enabled, role: "status" }, enabled ? "Bridge 已连接" : state.error ? "Bridge 未连接" : status ? "等待配置" : "正在检查")),
-    state.error ? (0, import_react.createElement)("p", { className: "dsma-error", role: "alert" }, state.error) : null,
-    !enabled ? (0, import_react.createElement)("div", { className: "dsma-card" }, (0, import_react.createElement)("h3", null, "先准备 Mobile Bridge"), (0, import_react.createElement)("p", null, "安装并配置独立的 DS Bot Mobile Bridge，设置专用存储和已准备好的 HTTPS 入口。此插件负责配对界面，Bridge 负责设备认证与消息传输。"), (0, import_react.createElement)("a", { href: "https://github.com/MuQY1818/ds-bot-mobile-app/blob/main/docs/installation.md", target: "_blank", rel: "noreferrer" }, "查看安装与配置指南"), (0, import_react.createElement)("button", { type: "button", onClick: controller.refresh }, "重新检查")) : (0, import_react.createElement)(
+    { className: "dsma-page", "aria-label": "App 连接与设备管理" },
+    (0, import_react2.createElement)("div", { className: "dsma-state-row" }, (0, import_react2.createElement)("span", { className: "dsma-state", "data-ready": enabled, role: "status" }, (0, import_react2.createElement)("i", { "aria-hidden": true }), enabled ? "连接服务已就绪" : state.error ? "暂时无法连接" : status ? "等待配置" : "正在检查连接…"), (0, import_react2.createElement)("button", { type: "button", className: "dsma-icon-button", disabled: state.busy, onClick: controller.refresh, "aria-label": "刷新设备状态" }, (0, import_react2.createElement)(DeviceIcon, { refresh: true }))),
+    state.error ? (0, import_react2.createElement)("p", { className: "dsma-error", role: "alert" }, state.error) : null,
+    !enabled ? (0, import_react2.createElement)("div", { className: "dsma-setup" }, (0, import_react2.createElement)("h3", null, "准备 App 连接"), (0, import_react2.createElement)("p", null, "先启用 Mobile Bridge，并设置手机可访问的 HTTPS 地址。"), (0, import_react2.createElement)("a", { href: "https://github.com/MuQY1818/ds-bot-mobile-app/blob/main/docs/installation.md", target: "_blank", rel: "noreferrer" }, "查看设置指南")) : (0, import_react2.createElement)(
       "div",
       null,
-      (0, import_react.createElement)(
+      (0, import_react2.createElement)(
         "div",
-        { className: "dsma-card" },
-        (0, import_react.createElement)("h3", null, "添加设备"),
-        (0, import_react.createElement)("p", null, "生成配对码后，用原生 App 扫描。确认下方设备名称后，再批准连接。"),
-        state.pairing ? (0, import_react.createElement)("div", { className: "dsma-pairing" }, (0, import_react.createElement)(PairingQR, { data: state.pairing }), (0, import_react.createElement)("p", null, "二维码仅用于你的手机；两分钟后失效。"), (0, import_react.createElement)("div", { className: "dsma-actions" }, (0, import_react.createElement)("button", { type: "button", onClick: () => controller.copy(navigator.clipboard) }, state.copied ? "已复制配对资料" : "复制配对资料"), (0, import_react.createElement)("button", { type: "button", onClick: () => {
+        { className: "dsma-add" },
+        (0, import_react2.createElement)("div", { className: "dsma-section-head" }, (0, import_react2.createElement)("h3", null, "连接 App"), !state.pairing ? (0, import_react2.createElement)("button", { type: "button", className: "dsma-primary", disabled: state.busy, onClick: controller.create }, state.busy ? "正在生成…" : "生成配对二维码") : null),
+        (0, import_react2.createElement)("p", null, "用手机 App 扫码，再在电脑上批准连接。"),
+        state.pairing ? (0, import_react2.createElement)("div", { className: "dsma-pairing" }, (0, import_react2.createElement)(PairingQR, { data: state.pairing }), (0, import_react2.createElement)("p", null, "配对码两分钟内有效"), (0, import_react2.createElement)("div", { className: "dsma-actions" }, (0, import_react2.createElement)("button", { type: "button", onClick: () => controller.copy(navigator.clipboard) }, state.copied ? "已复制配对资料" : "复制配对资料"), (0, import_react2.createElement)("button", { type: "button", className: "dsma-text-button", onClick: () => {
           controller.clearPairing();
           setShowManual(false);
-        } }, "隐藏二维码")), (0, import_react.createElement)("details", { open: showManual, onToggle: (event) => setShowManual(event.currentTarget.open) }, (0, import_react.createElement)("summary", null, "手动配对资料"), showManual ? (0, import_react.createElement)("textarea", { readOnly: true, "aria-label": "手动配对 JSON", value: JSON.stringify(state.pairing) }) : null)) : (0, import_react.createElement)("button", { type: "button", className: "dsma-primary", disabled: state.busy, onClick: controller.create }, state.busy ? "正在生成…" : "生成配对二维码")
+        } }, "收起")), (0, import_react2.createElement)("details", { open: showManual, onToggle: (event) => setShowManual(event.currentTarget.open) }, (0, import_react2.createElement)("summary", null, "手动配对"), showManual ? (0, import_react2.createElement)("textarea", { readOnly: true, "aria-label": "手动配对 JSON", value: JSON.stringify(state.pairing) }) : null)) : null
       ),
-      (0, import_react.createElement)("div", { className: "dsma-card" }, (0, import_react.createElement)("h3", null, "待批准请求"), ...(status.pending ?? []).map((item) => (0, import_react.createElement)("div", { className: "dsma-device", key: item.requestId }, (0, import_react.createElement)("strong", null, item.deviceName), (0, import_react.createElement)("span", null, "请核对这是你的设备"), (0, import_react.createElement)("div", { className: "dsma-actions" }, (0, import_react.createElement)("button", { type: "button", className: "dsma-primary", disabled: state.busy, onClick: () => controller.decide(item.requestId, true) }, "批准连接"), (0, import_react.createElement)("button", { type: "button", disabled: state.busy, onClick: () => controller.decide(item.requestId, false) }, "拒绝")))), !status.pending?.length ? (0, import_react.createElement)("p", { className: "dsma-muted" }, "手机扫码后，连接申请会显示在这里。") : null),
-      (0, import_react.createElement)("div", { className: "dsma-card" }, (0, import_react.createElement)("h3", null, "已授权设备"), ...(status.devices ?? []).filter((item) => !item.revokedAt).map((item) => (0, import_react.createElement)("div", { className: "dsma-device", key: item.id }, (0, import_react.createElement)("strong", null, item.name), (0, import_react.createElement)("span", null, item.lastSeenAt ? "最近连接 " + new Date(item.lastSeenAt).toLocaleString() : "等待首次连接"), state.confirmRevoke === item.id ? (0, import_react.createElement)("div", { className: "dsma-confirm", role: "group", "aria-label": "确认撤销设备" }, (0, import_react.createElement)("p", null, "撤销后，此设备需要重新配对才能访问。"), (0, import_react.createElement)("div", { className: "dsma-actions" }, (0, import_react.createElement)("button", { type: "button", disabled: state.busy, onClick: () => controller.revoke(item.id) }, "确认撤销"), (0, import_react.createElement)("button", { type: "button", onClick: controller.cancelRevoke }, "取消"))) : (0, import_react.createElement)("button", { type: "button", disabled: state.busy, onClick: () => controller.confirmRevoke(item.id) }, "撤销访问"))), !status.devices?.some((item) => !item.revokedAt) ? (0, import_react.createElement)("p", { className: "dsma-muted" }, "还没有已授权设备。") : null),
-      (0, import_react.createElement)("p", { className: "dsma-footnote" }, "原生 App 使用设备配对。Mobile Web 的登录二维码用于浏览器，两种二维码不可互换。隐藏二维码不会撤销已复制的资料；生成新码会替换未使用的旧码。")
-    ),
-    (0, import_react.createElement)("button", { type: "button", disabled: state.busy, onClick: controller.refresh }, "刷新设备状态")
+      pending.length ? (0, import_react2.createElement)("div", { className: "dsma-section" }, (0, import_react2.createElement)("h3", null, "待批准请求"), ...pending.map((item) => (0, import_react2.createElement)("div", { className: "dsma-device", key: item.requestId }, (0, import_react2.createElement)("span", { className: "dsma-device-icon" }, (0, import_react2.createElement)(DeviceIcon)), (0, import_react2.createElement)("div", { className: "dsma-device-copy" }, (0, import_react2.createElement)("strong", null, item.deviceName), (0, import_react2.createElement)("small", null, "核对设备名称后批准")), (0, import_react2.createElement)("div", { className: "dsma-actions" }, (0, import_react2.createElement)("button", { type: "button", className: "dsma-primary", disabled: state.busy, onClick: () => controller.decide(item.requestId, true) }, "批准"), (0, import_react2.createElement)("button", { type: "button", disabled: state.busy, onClick: () => controller.decide(item.requestId, false) }, "拒绝"))))) : null,
+      (0, import_react2.createElement)("div", { className: "dsma-section" }, (0, import_react2.createElement)("h3", null, "已授权设备", (0, import_react2.createElement)("span", { className: "dsma-count" }, devices.length)), ...devices.map((item) => (0, import_react2.createElement)("div", { className: "dsma-device", key: item.id }, (0, import_react2.createElement)("span", { className: "dsma-device-icon" }, (0, import_react2.createElement)(DeviceIcon)), (0, import_react2.createElement)("div", { className: "dsma-device-copy" }, (0, import_react2.createElement)("strong", null, item.name), (0, import_react2.createElement)("small", null, item.lastSeenAt ? "最近连接 " + new Date(item.lastSeenAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "等待首次连接")), state.confirmRevoke === item.id ? (0, import_react2.createElement)("div", { className: "dsma-confirm", role: "group", "aria-label": "确认撤销设备" }, (0, import_react2.createElement)("p", null, "此设备将需要重新配对。"), (0, import_react2.createElement)("div", { className: "dsma-actions" }, (0, import_react2.createElement)("button", { type: "button", className: "dsma-danger", disabled: state.busy, onClick: () => controller.revoke(item.id) }, "确认撤销"), (0, import_react2.createElement)("button", { type: "button", onClick: controller.cancelRevoke }, "取消"))) : (0, import_react2.createElement)("button", { type: "button", className: "dsma-text-button", disabled: state.busy, onClick: () => controller.confirmRevoke(item.id), "aria-label": "撤销 " + item.name + " 的访问" }, "撤销"))), !devices.length ? (0, import_react2.createElement)("p", { className: "dsma-empty" }, "还没有已连接的手机。") : null),
+      (0, import_react2.createElement)("details", { className: "dsma-notes" }, (0, import_react2.createElement)("summary", null, "配对说明"), (0, import_react2.createElement)("p", null, "App 配对码与 Web 登录码用途不同。仅向自己的设备提供配对资料，扫码后仍需电脑批准。收起二维码不会撤销已复制的资料；新码会替换未使用的旧码。"))
+    )
   );
 }
 function DevicesEntry({ createController }) {
-  const [controller, setController] = (0, import_react.useState)(null);
-  (0, import_react.useEffect)(() => {
+  const [controller, setController] = (0, import_react2.useState)(null);
+  (0, import_react2.useEffect)(() => {
     const owned = createController();
     setController(owned);
     return () => owned.dispose();
   }, [createController]);
-  return controller ? (0, import_react.createElement)(DevicesPage, { controller }) : null;
+  return controller ? (0, import_react2.createElement)(DevicesPage, { controller }) : null;
+}
+function CompanionSettings({ access }) {
+  return (0, import_react2.createElement)("div", { className: "dsma-page" }, (0, import_react2.createElement)("p", null, "通过统一手机访问入口配对 App，并管理已授权设备。"), (0, import_react2.createElement)("button", { type: "button", onClick: access.open }, "打开手机访问"));
 }
 function apply(ctx) {
   const controllers = /* @__PURE__ */ new Set();
@@ -2335,18 +2602,20 @@ function apply(ctx) {
     controllers.add(controller);
     return controller;
   };
+  const access = registerMobileAccessProvider({ id: "app", label: "App", order: 20, render: () => (0, import_react2.createElement)(DevicesEntry, { createController }) });
   ctx.effect(() => {
     const style = document.createElement("style");
     style.textContent = style_default;
     document.head.append(style);
     return () => {
+      access.dispose();
       style.remove();
       for (const controller of controllers) controller.dispose();
       controllers.clear();
     };
   });
-  ctx.slots.inject("plugins.bundle.config", () => ctx.slots.register({ name: "plugins.bundle.config", key: "ds-bot-mobile-app", inject: () => ({ createController }) }, DevicesEntry));
-  ctx.slots.inject("settings.section", () => ctx.slots.register({ name: "settings.section", id: "ds-bot-mobile-app", order: 35, label: () => "移动设备", inject: () => ({ createController }) }, DevicesEntry));
+  ctx.slots.inject("shell.overlay", () => ctx.slots.register({ name: "shell.overlay", id: "ds-bot-mobile-app-access", order: 42, inject: () => ({ access }) }, MobileAccessHost));
+  ctx.slots.inject("plugins.bundle.config", () => ctx.slots.register({ name: "plugins.bundle.config", key: "ds-bot-mobile-app", inject: () => ({ access }) }, CompanionSettings));
 }
 
 return Object.defineProperty({...module.exports},Symbol.toStringTag,{value:'Module'});
