@@ -5,6 +5,7 @@ import { URL } from 'node:url';
 import { createRequire } from 'node:module';
 import { runInNewContext } from 'node:vm';
 import { conversationStreams } from '../src/logic/conversation-streams.ts';
+import { outgoingMessage, recoveredIntent } from '../src/logic/outgoing.ts';
 
 const require = createRequire(import.meta.url), ts = require('typescript');
 function mountChat(deferHistory = false) {
@@ -57,6 +58,7 @@ function mountChat(deferHistory = false) {
       if (name === '../components/ScreenActivity') return { useScreenActivity: () => focused };
       if (name === '../storage') return storage;
       if (name === '../logic/conversation-streams') return { conversationStreams };
+      if (name === '../logic/outgoing') return { outgoingMessage, recoveredIntent };
       if (name === '@ds-bot/mobile-sdk') return { mergeMessages: (old: any[], next: any[]) => [...old, ...next] };
       if (name === '../logic/mobile-access') return { mobileActionAllowed: () => false };
       if (name === '../types') return { errorText: String };

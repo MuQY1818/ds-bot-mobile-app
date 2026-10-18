@@ -39,6 +39,8 @@ export interface Message {
   requestId?: string;
   /** Accepted host receipt awaiting its canonical transcript row. */
   localSubmission?: boolean;
+  /** Local outgoing state; distinct from an assistant streaming attempt. */
+  delivery?: 'sending' | 'unconfirmed' | 'rejected';
   /** Last event represented by an updatable tool card; seq remains its call position. */
   updatedSeq?: number;
   systemEvent?: { kind: 'working' | 'approval' | 'resumed' | 'cut' | 'stopped' | 'retry'; name?: string };

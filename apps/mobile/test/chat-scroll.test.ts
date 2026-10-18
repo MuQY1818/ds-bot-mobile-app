@@ -48,15 +48,25 @@ test("500-message history: dock/viewport resize without a new tail never signals
   assert.deepEqual(h.calls, []); assert.deepEqual(h.notices, []);
 });
 
-test("drag immediately cancels queued follow before first scroll event and blocks initial timer/layout/stream/send", () => {
+test("drag immediately cancels queued follow before first scroll event and blocks initial timer/layout/stream", () => {
   const h = ready();
   h.controller.resize("content", 390, 60010);
   h.controller.touchStart(); h.controller.beginDrag();
   h.controller.initialPosition();
   h.controller.resize("viewport", 390, 500);
   h.controller.tailChanged(chatTailVersion([...history, message(600)]));
-  h.controller.sent(); h.frame();
+  h.frame();
   assert.deepEqual(h.calls, []); assert.deepEqual(h.notices, [true]);
+});
+
+test("an explicit send reveals the outgoing bubble while a history gesture is still settling", () => {
+  const h = ready();
+  h.controller.touchStart(); h.controller.beginDrag(); h.controller.scroll(2000, 60000, 700);
+  h.controller.touchEnd(); h.controller.endDrag();
+  h.controller.sent(); h.controller.tailChanged(chatTailVersion([...history, message(600, 'Outgoing')])); h.frame();
+  assert.deepEqual(h.calls, [false]);
+  for (let i = 0; i < 30; i++) { h.controller.resize('content', 390, 61000 + (i % 2 ? 40 : -40)); h.frame(); }
+  assert.ok(h.calls.length <= 3, 'explicit send retains a bounded correction budget');
 });
 
 test("momentum and end-drag handoff suppress scroll commands until settling at bottom", () => {

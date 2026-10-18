@@ -1,6 +1,6 @@
 import type { Cache, Message } from "@ds-bot/mobile-sdk";
 import { readCache, writeCache, clearCache, clearCachedContent } from "./cache";
-export { readCache, writeCache, clearCache, clearCachedContent } from "./cache";
+export { readCache, writeCache, writeSendCache, clearCache, clearCachedContent } from "./cache";
 export { tokenStore } from "./credentials";
 export interface Host {
   url: string;

@@ -26,6 +26,8 @@ test('accepted receipts survive caching and reconcile with canonical transcript 
   const payload = { conversationId: 'bot', sessionId: 'part', requestId: 'stable-request', text: 'accepted fixture text' };
   const receipt = { status: 'accepted', requestId: payload.requestId, conversationId: 'bot', sessionId: 'part', createdAt: 1000 };
   const local = acceptedSubmissionMessage(payload, receipt);
+  const sending = { ...local, delivery: 'sending' };
+  assert.equal(mergeMessages([sending], [local])[0].delivery, undefined, 'acceptance clears the optimistic delivery label');
   const canonical = { ...local, id: 'canonical', seq: 10, localSubmission: undefined };
   for (const [first, second] of [[[local], [canonical]], [[canonical], [local]]]) {
     const result = mergeMessages(first, second);

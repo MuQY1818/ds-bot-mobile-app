@@ -126,6 +126,7 @@ export function acceptedSubmissionMessage(submission, receipt) {
     requestId: submission.requestId, role: 'user', text: submission.text,
     createdAt: Number.isFinite(timestamp(receipt.createdAt)) ? receipt.createdAt : Date.now(),
     seq: Number.MAX_SAFE_INTEGER, localSubmission: true,
+    delivery: undefined,
     ...(submission.attachments?.length ? { attachments: submission.attachments } : {}),
   };
 }

@@ -486,9 +486,9 @@ export function ChatScreen({
             accessibilityLabel={tr("Message")}
             multiline
             maxLength={Math.max(0,100000-(chat.draft.length-composer.text.length))}
-            placeholder={tr("Ask {p0}", { p0: String(conversation.name) })}
+            placeholder={chat.outgoing || chat.pending ? tr("Write your next message") : tr("Ask {p0}", { p0: String(conversation.name) })}
             value={composer.text}
-            editable={!chat.pending && !chat.busy}
+            editable={writable}
             onChangeText={setComposerText}
             onSelectionChange={event => setSelection(event.nativeEvent.selection)}
             onFocus={() => setComposerFocused(true)}
@@ -520,20 +520,23 @@ export function ChatScreen({
           />
           <IconButton primary size={44}
             name="send"
-            label={chat.pending ? tr("Retry") : tr("Send")}
+            label={tr("Send")}
             disabled={
               chat.previousDevice ||
               !writable ||
               chat.status === "unauthorized" ||
               chat.busy ||
-              (!chat.pending && !chat.draft.trim() && !attachments.length) ||
+              !!chat.outgoing ||
+              !!chat.pending ||
+              (!chat.draft.trim() && !attachments.length) ||
               !!bot?.waiting
             }
-            onPress={async () => {
-              if (await chat.send(attachments, attachments[0]?.sessionId)) {
-                setAttachments([]);
-                scroll.sent();
-              }
+            onPress={() => {
+              const operation = chat.beginSend(attachments, attachments[0]?.sessionId);
+              if (!operation) return;
+              setAttachments([]);
+              scroll.sent();
+              void operation;
             }}
           />
 
@@ -545,7 +548,7 @@ export function ChatScreen({
             onPress={() => setPreviousSends(true)}
           />
         )}
-        {chat.pending && (
+        {chat.outgoing && !chat.busy && (
           <Notice capsule
             text={
               chat.previousDevice
@@ -554,11 +557,12 @@ export function ChatScreen({
             }
           />
         )}
+        {chat.outgoing && !chat.busy && !chat.rejected && !chat.previousDevice && <Button secondary title={tr("Check send status")} onPress={() => { void chat.retry(); }} />}
         {chat.rejected && (
           <Button
             secondary
             title={tr("Keep draft and prepare again")}
-            onPress={chat.recompose}
+            onPress={async () => { const restored = await chat.recompose(); if (restored) setAttachments(restored); }}
           />
         )}
 

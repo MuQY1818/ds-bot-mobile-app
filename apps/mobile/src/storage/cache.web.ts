@@ -20,6 +20,14 @@ export async function writeCache(scope: string, name: string, value: unknown) {
     /* Browser preview may disable storage. */
   }
 }
+// Browser preview has one JS owner. Native send ownership uses SQLite CAS.
+export async function writeSendCache(scope: string, name: string, value: unknown, expectedRequestId: string | null) {
+  const storageKey = key(scope, name);
+  const previous = JSON.parse(localStorage.getItem(storageKey) || "null");
+  if (expectedRequestId === null ? previous !== null : previous?.requestId !== expectedRequestId) return false;
+  localStorage.setItem(storageKey, JSON.stringify(value));
+  return true;
+}
 export async function clearCache(scope: string) {
   for (const value of Object.keys(localStorage))
     if (value.startsWith(prefix + JSON.stringify([scope]).slice(0, -1) + ","))
@@ -44,10 +52,10 @@ export async function clearCachedContent(scope: string) {
     )
       continue;
     const name = parsed[1];
-    if (name.startsWith("pending:") || name.startsWith("archive:")) continue;
+    if (name.startsWith("pending:") || name.startsWith("outgoing:") || name.startsWith("archive:")) continue;
     if (
       name.startsWith("draft:") &&
-      (await readCache(scope, "pending:" + name.slice(6)))
+      ((await readCache(scope, "pending:" + name.slice(6))) || (await readCache(scope, "outgoing:" + name.slice(6))))
     )
       continue;
     localStorage.removeItem(entry);

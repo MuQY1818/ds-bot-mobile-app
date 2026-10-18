@@ -149,7 +149,11 @@ export function createChatScrollController(options: {
       cancelFollow();
     },
     sent() {
-      if (interacting()) return;
+      // A send is an explicit request to reveal its outgoing bubble, even
+      // while the prior history gesture is still settling.
+      touching = dragging = settling = momentum = false;
+      cancelSettle?.();
+      jumping = true;
       nearBottom = true;
       setAwayFromBottom(false);
       setFollowing(true);

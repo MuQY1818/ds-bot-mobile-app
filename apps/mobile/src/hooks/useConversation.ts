@@ -10,13 +10,14 @@ import {
   MobileClient,
   Submission,
 } from "@ds-bot/mobile-sdk";
-import { cache, Host, readCache, writeCache, tokenStore } from "../storage";
+import { cache, Host, readCache, writeCache, writeSendCache, tokenStore } from "../storage";
 import { errorText } from "../types";
 import { confirmOrSubmit, definitelyRejected } from "../logic/submissions";
 import { mobileActionAllowed, mobileCancelAllowed, BRIDGE_UNAVAILABLE } from "../logic/mobile-access";
 import type { MobileCapabilities } from "../logic/mobile-capabilities";
 import { useScreenActivity } from "../components/ScreenActivity";
 import { conversationStreams } from "../logic/conversation-streams";
+import { outgoingMessage, recoveredIntent, type OutgoingIntent } from "../logic/outgoing";
 interface PendingSubmission extends Submission {
   deviceId?: string;
 }
@@ -26,6 +27,9 @@ export interface QueueItem {
   text: string;
   target: string;
 }
+// Retained and newly mounted screens share ordering for one conversation.
+// In particular, an old initial draft clear must finish before a newer edit.
+const conversationWrites = new Map<string, Promise<void>>();
 export function useConversation(client: MobileClient, host: Host, id: string, capabilities?: MobileCapabilities) {
   const focused = useScreenActivity();
   const hydration = useRef<Promise<void>>(Promise.resolve());
@@ -47,13 +51,17 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     return () => clearTimeout(timer);
   }, [receipt]);
   const [pending, setPending] = useState<PendingSubmission | null>(null);
+  const [outgoing, setOutgoingState] = useState<OutgoingIntent | null>(null);
+  const outgoingRef = useRef<OutgoingIntent | null>(null);
+  const pendingRef = useRef<PendingSubmission | null>(null);
+  const hydrated = useRef(false);
+  const draftRef = useRef("");
   const [previousDevice, setPreviousDevice] = useState(false);
   const [archived, setArchived] = useState<PendingSubmission[]>([]);
   const [rejected, setRejected] = useState(false);
   const alive = useRef(true);
   const sending = useRef(false);
   const lastSubmission = useRef<{ requestId: string; sessionId: string } | null>(null);
-  const draftWrites = useRef<Promise<void>>(Promise.resolve());
   const refreshMessages = useRef<() => void>(() => {});
   const scope = useRef({ client, serverId: host.serverId, id });
   const streamOwner = useRef({ client, serverId: host.serverId });
@@ -74,6 +82,10 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     setCursor(retained?.snapshot.cursor ?? null);
     setError("");
     sending.current = false;
+    hydrated.current = false;
+    outgoingRef.current = null;
+    pendingRef.current = null;
+    setOutgoingState(null);
     setBusy(false);
     hydration.current = Promise.all([
       cache.getMessages(host.serverId, id),
@@ -81,16 +93,25 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       readCache<PendingSubmission | null>(host.serverId, `pending:${id}`),
       tokenStore.get(),
       readCache<PendingSubmission[]>(host.serverId, `archive:${id}`),
+      readCache<OutgoingIntent | null>(host.serverId, `outgoing:${id}`),
     ])
-      .then(([saved, text, submission, session, previous]) => {
+      .then(([saved, text, submission, session, previous, intent]) => {
         if (active) {
+          const recovered = intent ? { ...intent, delivery: intent.delivery === "rejected" ? "rejected" as const : "unconfirmed" as const }
+            : submission ? recoveredIntent(submission) : null;
+          outgoingRef.current = recovered;
+          pendingRef.current = submission;
+          setOutgoingState(recovered);
+          setRejected(recovered?.delivery === "rejected");
           setMessages(previous => mergeMessages(saved, previous));
-          setDraftState(text);
+          draftRef.current = text;
+          setDraftState(draftRef.current);
           setPending(submission);
           setPreviousDevice(
-            !!submission && submission.deviceId !== session?.deviceId,
+            !!recovered?.deviceId && recovered.deviceId !== session?.deviceId,
           );
           setArchived(previous || []);
+          hydrated.current = true;
         }
       })
       .catch((err) => {
@@ -244,11 +265,9 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
   }, [client, host.serverId, id, canQueue, focused]);
   const setDraft = useCallback(
     (text: string) => {
+      draftRef.current = text;
       setDraftState(text);
-      draftWrites.current = draftWrites.current
-        .catch(() => {})
-        .then(() => cache.setDraft(host.serverId, id, text));
-      void draftWrites.current.catch((err) => {
+      void queueDraftWrite(() => cache.setDraft(host.serverId, id, text)).catch((err) => {
         if (alive.current)
           setError(`Draft could not be saved: ${errorText(err)}`);
       });
@@ -268,54 +287,104 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       setBusy(false);
     }
   }
-  async function send(attachments: Attachment[] = [], sessionId?: string, voiceText?: string) {
+  function queueDraftWrite(operation: () => Promise<void>) {
+    const key = JSON.stringify([host.serverId, id]);
+    const result = (conversationWrites.get(key) || Promise.resolve()).catch(() => {}).then(operation);
+    const settled = result.catch(() => {});
+    conversationWrites.set(key, settled);
+    void settled.then(() => { if (conversationWrites.get(key) === settled) conversationWrites.delete(key); });
+    return result;
+  }
+  function projectOutgoing(intent: OutgoingIntent | null) {
+    outgoingRef.current = intent;
+    setOutgoingState(intent);
+  }
+  function beginSend(attachments: Attachment[] = [], sessionId?: string, voiceText?: string) {
+    const text = (voiceText ?? draftRef.current).trim();
+    if (!hydrated.current || sending.current || outgoingRef.current || pendingRef.current || (!text && !attachments.length)) return null;
+    const intent: OutgoingIntent = {
+      requestId: Crypto.randomUUID(), conversationId: id, text, attachments: [...attachments],
+      createdAt: Date.now(), expectedSessionId: sessionId, delivery: "sending",
+    };
+    // This state update precedes token, target, storage and every network await.
+    projectOutgoing(intent);
+    draftRef.current = "";
+    setDraftState("");
+    setRejected(false);
+    setReceipt("");
+    setError("");
+    const persisted = queueDraftWrite(async () => {
+      // Preserve the original text in the outbox before clearing its old draft.
+      // If interrupted between writes, keeping both is safer than losing text.
+      if (!await writeSendCache(host.serverId, `outgoing:${id}`, intent, null))
+        throw new Error("Another send is still awaiting confirmation. Reopen this conversation.");
+      await cache.setDraft(host.serverId, id, "");
+    });
+    return deliver(intent, true, persisted);
+  }
+  function retry() {
+    if (!hydrated.current || sending.current) return null;
+    const intent = outgoingRef.current || (pendingRef.current ? recoveredIntent(pendingRef.current) : null);
+    if (!intent) return null;
+    return deliver({ ...intent, delivery: "sending" }, false);
+  }
+  async function deliver(intent: OutgoingIntent, fresh: boolean, initialPersistence?: Promise<void>) {
     const sendScope = scope.current;
     const current = () => alive.current && scope.current === sendScope;
-    const outgoing = voiceText ?? draft;
-    if (sending.current || (voiceText !== undefined && pending) || (!pending && !outgoing.trim() && !attachments.length))
-      return false;
     sending.current = true;
     setBusy(true);
+    projectOutgoing(intent);
     setError("");
+    setReceipt("");
+    let bound = intent;
     try {
-      if (voiceText !== undefined) {
-        await draftWrites.current;
-        await cache.setDraft(host.serverId, id, outgoing);
-        if (!current()) return false;
-        setDraftState(outgoing);
-      }
+      await (initialPersistence || queueDraftWrite(async () => {
+        if (!await writeSendCache(host.serverId, `outgoing:${id}`, intent, intent.requestId)) {
+          if (!await writeSendCache(host.serverId, `outgoing:${id}`, intent, null))
+            throw new Error("This send was already resolved. Reopen this conversation.");
+        }
+      }));
+      if (!current()) return false;
       const session = await tokenStore.get();
       if (!current()) return false;
-      if (!session)
-        throw new Error("This device is not paired. Reconnect in Settings.");
-      let payload = pending;
+      if (!session) throw new Error("This device is not paired. Reconnect in Settings.");
+      if (bound.deviceId && bound.deviceId !== session.deviceId)
+        throw new Error("This send belongs to a previous device pairing. Review it on your host; it cannot be retried from this pairing.");
+      bound = { ...bound, deviceId: session.deviceId };
+      // Bind pairing identity before awaiting the authoritative target.
+      await queueDraftWrite(async () => {
+        if (!await writeSendCache(host.serverId, `outgoing:${id}`, bound, bound.requestId))
+          throw new Error("This send was already resolved. Reopen this conversation.");
+      });
+      if (!current()) return false;
+      let payload = pendingRef.current?.requestId === bound.requestId ? pendingRef.current : null;
+      const alreadyDurable = !!payload;
       if (!payload) {
-        const target = await client.target(id);
+        const target = bound.sessionId ? { sessionId: bound.sessionId } : await client.target(id);
         if (!current()) return false;
-        if (sessionId && sessionId !== target.sessionId)
-          throw new Error(
-            "The host moved to a new conversation part. Remove and attach the files again before sending.",
-          );
-        payload = {
-          deviceId: session.deviceId,
-          conversationId: id,
-          sessionId: target.sessionId,
-          requestId: Crypto.randomUUID(),
-          text: outgoing.trim(),
-          attachments,
-        };
-        await writeCache(host.serverId, `pending:${id}`, payload);
+        if (bound.expectedSessionId && bound.expectedSessionId !== target.sessionId)
+          throw Object.assign(new Error("The host moved to a new conversation part. Remove and attach the files again before sending."), { notDispatched: true });
+        bound = { ...bound, sessionId: target.sessionId };
+        projectOutgoing(bound);
+        payload = { deviceId: session.deviceId, conversationId: id, sessionId: target.sessionId,
+          requestId: bound.requestId, text: bound.text, attachments: bound.attachments };
+        const durablePayload = payload;
+        await queueDraftWrite(async () => {
+          if (!await writeSendCache(host.serverId, `outgoing:${id}`, bound, bound.requestId)
+            || !(await writeSendCache(host.serverId, `pending:${id}`, durablePayload, durablePayload.requestId)
+              || await writeSendCache(host.serverId, `pending:${id}`, durablePayload, null)))
+            throw new Error("Another send is still awaiting confirmation. Reopen this conversation.");
+        });
         if (!current()) return false;
+        pendingRef.current = payload;
         setPending(payload);
       }
       const { deviceId, ...submission } = payload;
-      const result = await confirmOrSubmit(client, submission, {
-        storedDeviceId: deviceId,
-        currentDeviceId: session.deviceId,
-      });
+      // Only a brand-new durable identity skips receipt lookup. Restored or
+      // uncertain sends always reconcile before any possible repeated POST.
+      const result = fresh && !alreadyDurable ? await client.submit(submission)
+        : await confirmOrSubmit(client, submission, { storedDeviceId: deviceId, currentDeviceId: session.deviceId });
       if (result.status === "accepted") {
-        // An old screen may finish after navigation; cache its own receipt, but
-        // never insert it into a different chat or clear that chat's draft.
         void client.rememberAcceptedSubmission(submission, result).catch(err => {
           if (current()) setError(`Sent, but the local cache could not be saved: ${errorText(err)}`);
         });
@@ -323,34 +392,34 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       if (!current()) return false;
       if (result.status === "rejected") {
         setRejected(true);
-        throw new Error(
-          "The host rejected this send. Keep your draft and prepare a new submission.",
-        );
+        throw new Error("The host rejected this send. Keep your draft and prepare a new submission.");
       }
       if (result.status !== "accepted")
-        throw new Error(
-          "The host cannot yet confirm this send. Keep the original request and check again; it will not be sent automatically.",
-        );
-      setRejected(false);
+        throw new Error("The host cannot yet confirm this send. Keep the original request and check again; it will not be sent automatically.");
       const acknowledged = acceptedSubmissionMessage(submission, result);
       setMessages(previous => mergeMessages(previous, [acknowledged]));
-      // Receipt confirmation is independent of the WebSocket and cache latency.
+      projectOutgoing(null);
+      pendingRef.current = null;
+      setPending(null);
+      setRejected(false);
       refreshMessages.current();
       lastSubmission.current = { requestId: payload.requestId, sessionId: payload.sessionId };
       setReceipt("Sent");
-      await draftWrites.current;
-      if (!current()) return false;
-      await cache.setDraft(host.serverId, id, "");
-      await writeCache(host.serverId, `pending:${id}`, null);
-      if (!current()) return false;
-      setPending(null);
-      setDraftState("");
+      // The composer was cleared at tap time. Never clear a newer draft here.
+      void queueDraftWrite(async () => {
+        await writeSendCache(host.serverId, `pending:${id}`, null, payload.requestId);
+        await writeSendCache(host.serverId, `outgoing:${id}`, null, payload.requestId);
+      }).catch(err => { if (current()) setError(`Sent, but the local cache could not be saved: ${errorText(err)}`); });
       return true;
     } catch (err) {
+      const rejectedSend = definitelyRejected(err) || (typeof err === "object" && err !== null && (("notDispatched" in err && err.notDispatched === true) || ("message" in err && String(err.message).includes("host rejected"))));
+      const failed: OutgoingIntent = { ...bound, delivery: rejectedSend ? "rejected" : "unconfirmed" };
       if (current()) {
-        if (definitelyRejected(err)) setRejected(true);
+        projectOutgoing(failed);
+        if (rejectedSend) setRejected(true);
         setError(errorText(err));
       }
+      void queueDraftWrite(async () => { await writeSendCache(host.serverId, `outgoing:${id}`, failed, failed.requestId); }).catch(() => {});
       return false;
     } finally {
       if (scope.current === sendScope) {
@@ -358,6 +427,10 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
         if (alive.current) setBusy(false);
       }
     }
+  }
+  async function send(attachments: Attachment[] = [], sessionId?: string, voiceText?: string) {
+    const operation = outgoingRef.current || pendingRef.current ? (voiceText === undefined ? retry() : null) : beginSend(attachments, sessionId, voiceText);
+    return operation ? await operation : false;
   }
   async function cancel() {
     if (!mobileCancelAllowed(capabilities)) { setError(BRIDGE_UNAVAILABLE); return; }
@@ -372,15 +445,18 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     }
   }
   async function archivePrevious() {
-    if (!previousDevice || !pending) return;
-    const items = [...archived, pending];
-    await writeCache(host.serverId, `archive:${id}`, items);
-    await draftWrites.current;
-    await cache.setDraft(host.serverId, id, "");
-    await writeCache(host.serverId, `pending:${id}`, null);
-    setArchived(items);
+    if (!previousDevice || (!pendingRef.current && !outgoingRef.current)) return;
+    const old = pendingRef.current || outgoingRef.current!;
+    const items = [...archived, old];
+    await queueDraftWrite(async () => {
+      await writeCache(host.serverId, `archive:${id}`, items);
+      await writeSendCache(host.serverId, `pending:${id}`, null, old.requestId);
+      await writeSendCache(host.serverId, `outgoing:${id}`, null, old.requestId);
+    });
+    setArchived(items as PendingSubmission[]);
+    pendingRef.current = null;
+    projectOutgoing(null);
     setPending(null);
-    setDraftState("");
     setPreviousDevice(false);
     setError("");
   }
@@ -399,10 +475,27 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
   }
   async function recompose() {
     if (!rejected) return;
-    await writeCache(host.serverId, `pending:${id}`, null);
+    if (draftRef.current.trim()) {
+      setError("Your new draft is kept. Clear it before restoring this failed message.");
+      return;
+    }
+    const failed = outgoingRef.current;
+    if (failed) {
+      draftRef.current = failed.text;
+      setDraftState(failed.text);
+      await queueDraftWrite(() => cache.setDraft(host.serverId, id, failed.text));
+    }
+    const requestId = failed?.requestId || pendingRef.current?.requestId;
+    if (requestId) await queueDraftWrite(async () => {
+      await writeSendCache(host.serverId, `pending:${id}`, null, requestId);
+      await writeSendCache(host.serverId, `outgoing:${id}`, null, requestId);
+    });
+    pendingRef.current = null;
+    projectOutgoing(null);
     setPending(null);
     setRejected(false);
     setError("");
+    return failed?.attachments || [];
   }
   return {
     previousDevice,
@@ -412,7 +505,10 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     removeQueued,
     rejected,
     recompose,
-    messages,
+    messages: outgoing ? mergeMessages(messages, [outgoingMessage(outgoing)]) : messages,
+    outgoing,
+    beginSend,
+    retry,
     draft,
     setDraft,
     cursor,
