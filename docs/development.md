@@ -20,13 +20,13 @@ BRIDGE_TEST_BOT 可指定另一份已经审查的 DS Bot 源码，BRIDGE_TEST_DE
 
 App 测试自带 esbuild，不依赖另一个 DS Bot 仓库的 node_modules。Android 签名脚本只接受你自己提供的 ANDROID_KEYSTORE_PATH、ANDROID_KEY_ALIAS、ANDROID_KEYSTORE_PASSWORD 和 ANDROID_SIGNING_CERT_SHA256。不含任何签名密钥或证书。
 
-npm run pack:bridge 要求干净 Git 工作树，按明确文件白名单打包，生成源码 commit、SHA256SUMS 和 release 元数据。每次版本修改必须更新 bridge/package.json 与 lock，保留旧 tag/制品。
+npm run pack:bridge 要求干净 Git 工作树，按明确文件白名单打包，记录对应源码提交与发布信息。每次版本修改必须更新 bridge/package.json 与 lock，保留旧 tag/制品。
 
 ## App 电脑端插件
 
 `companion/` 是独立的标准 DSH UI bundle。`src/` 为可维护源码，`client.js` 为提交并随包交付的构建产物。修改后运行 `npm --prefix companion run check` 和 `npm --prefix companion run build`；CI 会再次构建并检查 `client.js` 没有漂移。
 
-`npm run pack:companion` 同样要求干净工作树，只输出清单内文件、源码 commit 和 SHA256。校验文件为 `COMPANION-SHA256SUMS`，元数据为 `companion-release.json`，避免覆盖 Bridge 的既有制品。
+`npm run pack:companion` 同样要求干净工作树，按白名单输出插件安装包，并记录对应源码提交。Bridge 与配套插件分别打包，保持版本独立。
 
 `test:delivery` 在独立 `HOME` / `DSH_HOME` 中安装固定公开 DSH、只用于 fixture 的已审查 DS Bot 和本地 `.tgz`。测试使用固定 `pnpm@10.12.1`，通过真实 owner carrier 调用官方插件管理器安装、启停与移除 App 配套插件，验证 Bridge 与设备授权独立保留；结束后清理本轮子进程。所有凭据与诊断仅留在 ignored `companion/fixture/`，不会进入包。
 
