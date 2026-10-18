@@ -9,6 +9,7 @@ export function chatTailVersion(messages: readonly Message[]) {
 export function createChatScrollController(options: {
   scrollToEnd: (animated: boolean) => void;
   unreadChanged: (unread: boolean) => void;
+  followingChanged?: (following: boolean) => void;
   frame: (callback: () => void) => () => void;
   delay: (callback: () => void, milliseconds: number) => () => void;
 }) {
@@ -21,9 +22,11 @@ export function createChatScrollController(options: {
   let settling = false;
   let momentum = false;
   let unread = false;
+  let layoutFollowBudget = 0;
+  let tailAwaitingFollow = false;
   let cancelFrame: (() => void) | undefined;
   let cancelSettle: (() => void) | undefined;
-  const sizes = new Map<string, string>();
+  const sizes = new Map<string, { width: number; height: number }>();
   const interacting = () => touching || dragging || settling || momentum;
   function setUnread(value: boolean) {
     if (value === unread) return;
@@ -31,14 +34,25 @@ export function createChatScrollController(options: {
     options.unreadChanged(value);
   }
   function cancelFollow() { cancelFrame?.(); cancelFrame = undefined; }
-  function follow(animated = false) {
+  function setFollowing(value: boolean) {
+    if (following === value) return;
+    following = value;
+    options.followingChanged?.(value);
+  }
+  function follow(animated = false, fromLayout = false) {
     if (!tail || !following || interacting()) return;
+    if (fromLayout && layoutFollowBudget <= 0) return;
     cancelFollow();
     cancelFrame = options.frame(() => {
       cancelFrame = undefined;
       // Recheck at execution: a drag can begin after this frame was queued.
       if (!following || interacting()) return;
+      if (fromLayout) {
+        if (layoutFollowBudget <= 0) return;
+        layoutFollowBudget--;
+      }
       positioned = true;
+      tailAwaitingFollow = false;
       options.scrollToEnd(animated);
     });
   }
@@ -47,8 +61,12 @@ export function createChatScrollController(options: {
     settling = false;
     cancelSettle?.();
     cancelSettle = undefined;
-    following = nearBottom;
-    if (following) { setUnread(false); follow(); }
+    setFollowing(nearBottom);
+    if (following) {
+      const catchUp = tailAwaitingFollow;
+      setUnread(false);
+      if (catchUp) follow();
+    }
   }
   function settle() {
     cancelSettle?.();
@@ -61,22 +79,29 @@ export function createChatScrollController(options: {
       const hadTail = !!tail;
       tail = value;
       if (!tail) return;
+      tailAwaitingFollow = true;
+      layoutFollowBudget = 2;
       if (following && !interacting()) follow();
       else if (hadTail) setUnread(true);
     },
     resize(kind: "viewport" | "content", width: number, height: number) {
-      const size = `${width}:${height}`;
-      if (sizes.get(kind) === size) return;
-      sizes.set(kind, size);
-      follow();
+      const previous = sizes.get(kind);
+      if (previous && Math.abs(previous.width - width) <= 1 && Math.abs(previous.height - height) <= 1) return;
+      sizes.set(kind, { width, height });
+      // Virtualized rows can repeatedly revise the estimated content height.
+      // Only a new tail, an explicit send/jump, or a viewport change grants
+      // layout corrections. Content measurements cannot grant their own budget.
+      if (kind === "viewport") layoutFollowBudget = 2;
+      follow(false, true);
     },
     initialPosition() { if (!positioned) follow(); },
-    touchStart() { touching = true; positioned = true; cancelFollow(); },
+    touchStart() { touching = true; positioned = true; layoutFollowBudget = 0; cancelFollow(); },
     touchEnd() { touching = false; if (!dragging && !settling && !momentum) finishInteraction(); },
     beginDrag() {
       dragging = true;
       positioned = true;
-      following = false;
+      layoutFollowBudget = 0;
+      setFollowing(false);
       cancelFollow();
       cancelSettle?.();
     },
@@ -88,25 +113,30 @@ export function createChatScrollController(options: {
       nearBottom = contentHeight - offset - viewportHeight < 120;
       if (nearBottom) setUnread(false);
       // Geometry changes during automatic following must not detach the tail.
-      if (!following && !interacting()) following = nearBottom;
+      if (!following && !interacting()) setFollowing(nearBottom);
       if (settling && !momentum) settle();
     },
     loadOlder() {
       positioned = true;
-      following = false;
+      layoutFollowBudget = 0;
+      setFollowing(false);
       nearBottom = false;
       cancelFollow();
     },
     sent() {
       if (interacting()) return;
-      following = nearBottom = true;
+      nearBottom = true;
+      setFollowing(true);
+      layoutFollowBudget = 2;
       setUnread(false);
       follow();
     },
     jumpToBottom() {
       touching = dragging = settling = momentum = false;
       cancelSettle?.();
-      following = nearBottom = true;
+      nearBottom = true;
+      setFollowing(true);
+      layoutFollowBudget = 2;
       setUnread(false);
       follow(true);
     },

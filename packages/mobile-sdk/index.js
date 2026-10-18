@@ -66,15 +66,26 @@ function abortable(promise, signal) {
   });
 }
 
+function sameSnapshot(a, b) {
+  if (Object.is(a, b)) return true;
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object' || Array.isArray(a) !== Array.isArray(b)) return false;
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every(key => Object.hasOwn(b, key) && sameSnapshot(a[key], b[key]));
+}
+
 export function mergeMessages(existing, incoming) {
+  const confirmed = new Set([...existing, ...incoming]
+    .filter(message => message?.role === 'user' && message.requestId && !message.localSubmission)
+    .map(message => JSON.stringify([message.sessionId, message.requestId])));
   const merged = new Map();
   for (const message of [...existing, ...incoming]) {
     if (!message || typeof message.id !== 'string') continue;
+    if (message.localSubmission && confirmed.has(JSON.stringify([message.sessionId, message.requestId]))) continue;
     const previous = merged.get(message.id);
     const previousVersion = previous?.updatedSeq ?? previous?.seq;
     const incomingVersion = message.updatedSeq ?? message.seq;
     const stale = previous && Number.isFinite(previousVersion) && Number.isFinite(incomingVersion) && incomingVersion < previousVersion;
-    const value = stale ? { ...message, ...previous } : { ...previous, ...message };
+    const value = !previous ? message : stale ? { ...message, ...previous } : { ...previous, ...message };
     if (previous?.tool && message.tool) {
       value.tool = stale ? { ...message.tool, ...previous.tool } : { ...previous.tool, ...message.tool };
       if (value.tool.name === 'Tool') {
@@ -88,14 +99,35 @@ export function mergeMessages(existing, incoming) {
         value.createdAt = first.createdAt;
       }
     }
-    merged.set(message.id, value);
+    merged.set(message.id, previous && sameSnapshot(previous, value) ? previous : value);
   }
-  return [...merged.values()].sort((a, b) => {
+  const result = [...merged.values()].sort((a, b) => {
     if (Boolean(a.pending) !== Boolean(b.pending)) return a.pending ? 1 : -1;
+    if (a.localSubmission || b.localSubmission) {
+      const difference = timestamp(a.createdAt) - timestamp(b.createdAt);
+      if (Number.isFinite(difference) && difference) return difference;
+    }
     if (a.sessionId === b.sessionId && Number.isFinite(a.seq) && Number.isFinite(b.seq)) return a.seq - b.seq;
     const difference = timestamp(a.createdAt) - timestamp(b.createdAt);
     return Number.isFinite(difference) ? difference : 0;
   });
+  return result.length === existing.length && result.every((message, index) => message === existing[index]) ? existing : result;
+}
+
+/** Only an accepted host receipt may create a local, confirmed user message. */
+export function acceptedSubmissionMessage(submission, receipt) {
+  if (receipt?.status !== 'accepted' || receipt.requestId !== submission.requestId
+    || (receipt.conversationId && receipt.conversationId !== submission.conversationId)
+    || (receipt.sessionId && receipt.sessionId !== submission.sessionId)) {
+    throw new MobileError('invalid_receipt', 'The host has not confirmed this submission.');
+  }
+  return {
+    id: `accepted:${submission.requestId}`, sessionId: submission.sessionId,
+    requestId: submission.requestId, role: 'user', text: submission.text,
+    createdAt: Number.isFinite(timestamp(receipt.createdAt)) ? receipt.createdAt : Date.now(),
+    seq: Number.MAX_SAFE_INTEGER, localSubmission: true,
+    ...(submission.attachments?.length ? { attachments: submission.attachments } : {}),
+  };
 }
 
 export function applyConversationEvent(messages, event) {
@@ -366,6 +398,12 @@ export class MobileClient {
     return this.#request('/submissions', { method: 'POST', json: submission });
   }
   submission(requestId) { return this.#request(`/submissions/${encodeURIComponent(requireString(requestId, 'Request identifier'))}`); }
+  async rememberAcceptedSubmission(submission, receipt) {
+    const message = acceptedSubmissionMessage(submission, receipt);
+    const generation = this.#generation;
+    const session = await this.#session(generation);
+    await this.#cacheMessages(session.serverId, submission.conversationId, old => mergeMessages(old, [message]), generation);
+  }
   cancel(conversationId) { return this.#request(`/conversations/${encodeURIComponent(requireString(conversationId, 'Conversation'))}/cancel`, { method: 'POST', json: {} }); }
   action(endpoint, payload = {}, { signal } = {}) { return this.#request('/actions', { method: 'POST', json: { endpoint, payload }, signal }); }
   upload({ conversationId, sessionId, name, mediaType, body }) {

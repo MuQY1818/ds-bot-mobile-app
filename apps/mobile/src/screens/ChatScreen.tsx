@@ -153,14 +153,17 @@ export function ChatScreen({
     return () => { hide.remove(); show.remove(); };
   }, []);
   const [newMessages, setNewMessages] = useState(false);
+  const [anchorHistory, setAnchorHistory] = useState(false);
   const scroll = useMemo(() => createChatScrollController({
     scrollToEnd: animated => list.current?.scrollToEnd({ animated }),
     unreadChanged: setNewMessages,
+    followingChanged: following => setAnchorHistory(!following),
     frame: callback => { const id = requestAnimationFrame(callback); return () => cancelAnimationFrame(id); },
     delay: (callback, milliseconds) => { const id = setTimeout(callback, milliseconds); return () => clearTimeout(id); },
   }), [conversation.id]);
   useEffect(() => {
     setNewMessages(false);
+    setAnchorHistory(false);
     return () => scroll.dispose();
   }, [scroll]);
   const bot = team.bots.find(
@@ -302,7 +305,7 @@ export function ChatScreen({
         keyboardShouldPersistTaps="handled"
         onLayout={event => { const { width, height } = event.nativeEvent.layout; scroll.resize("viewport", width, height); }}
         scrollIndicatorInsets={{ top: 76, bottom: dockHeight }}
-        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+        maintainVisibleContentPosition={anchorHistory ? { minIndexForVisible: 0 } : undefined}
         onScrollBeginDrag={() => scroll.beginDrag()}
         onScrollEndDrag={() => scroll.endDrag()}
         onMomentumScrollBegin={() => scroll.momentumStart()}
@@ -321,7 +324,6 @@ export function ChatScreen({
         onContentSizeChange={(width, height) => scroll.resize("content", width, height)}
         ListHeaderComponent={
           <View style={{ gap: 8 }}>
-          {chat.status === "unauthorized" ? <Notice error text={tr("This device no longer has access. Open Settings, disconnect, then pair again.")} /> : !online ? <Notice text={tr("Host offline. Cached messages and drafts are available. Keep your computer awake, then reconnect to send.")} /> : chat.status !== "connected" ? <Text style={{ color: t.muted, fontSize: 11, textAlign: "center" }}>{tr("Reconnecting…")}</Text> : null}
           {team.readOnly ? <Notice text={team.readOnly} /> : null}
           {chat.cursor ? (
             <Button
@@ -430,6 +432,7 @@ export function ChatScreen({
           gap: 9,
         }}
       >
+        {chat.status === "unauthorized" ? <Notice capsule error text={tr("This device no longer has access. Open Settings, disconnect, then pair again.")} /> : !online ? <Notice capsule text={tr("Host offline. Cached messages and drafts are available. Keep your computer awake, then reconnect to send.")} /> : chat.status !== "connected" ? <Notice capsule text={tr("Reconnecting…")} /> : null}
         <Notice capsule error text={chat.error} />
         <MentionMenu rows={mentionRows} pick={pickMention} close={() => setDismissedMention(mentionKey)} />
         {!!composer.references.length && <View pointerEvents="box-none" style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>{composer.references.map(ref=><View key={ref.sessionId} style={{flexDirection:"row",alignItems:"center",backgroundColor:t.surface,borderColor:t.line,borderWidth:1,borderRadius:999,paddingLeft:14,gap:8}}>

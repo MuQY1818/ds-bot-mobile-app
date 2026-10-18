@@ -37,6 +37,8 @@ export interface Message {
   turn?: number;
   step?: number;
   requestId?: string;
+  /** Accepted host receipt awaiting its canonical transcript row. */
+  localSubmission?: boolean;
   /** Last event represented by an updatable tool card; seq remains its call position. */
   updatedSeq?: number;
   systemEvent?: { kind: 'working' | 'approval' | 'resumed' | 'cut' | 'stopped' | 'retry'; name?: string };
@@ -198,6 +200,7 @@ export class MobileError extends Error {
 export function validateServerUrl(value: string, options?: { allowInsecure?: boolean }): string;
 /** Deduplicate by stable message id, preserving immutable messages from previous pages. */
 export function mergeMessages(existing: Message[], incoming: Message[]): Message[];
+export function acceptedSubmissionMessage(submission: Submission, receipt: SubmissionReceipt): Message;
 /** Merge reset pages and replace cumulative stream attempts with final messages. */
 export function applyConversationEvent(messages: Message[], event: MobileEvent): Message[];
 export function validateTlsPin(value: unknown): string;
@@ -244,6 +247,8 @@ export class MobileClient {
   /** requestId must be generated once and retained across all retries. */
   submit(submission: Submission): Promise<SubmissionReceipt>;
   submission(requestId: string): Promise<SubmissionReceipt>;
+  /** Persists a confirmed send in the same queue as HTTP and WebSocket cache updates. */
+  rememberAcceptedSubmission(submission: Submission, receipt: SubmissionReceipt): Promise<void>;
   cancel(conversationId: string): Promise<Record<string, unknown>>;
   action<T = Record<string, unknown>>(endpoint: string, payload?: Record<string, unknown>, options?: { signal?: AbortSignal }): Promise<T>;
   upload(options: { conversationId: string; sessionId: string; name: string; mediaType: string; body: BodyInit }): Promise<Attachment>;

@@ -3,6 +3,7 @@ import { AppState } from "react-native";
 import * as Crypto from "expo-crypto";
 import {
   applyConversationEvent,
+  acceptedSubmissionMessage,
   Attachment,
   ConnectionStatus,
   mergeMessages,
@@ -53,8 +54,14 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
   const sending = useRef(false);
   const lastSubmission = useRef<{ requestId: string; sessionId: string } | null>(null);
   const draftWrites = useRef<Promise<void>>(Promise.resolve());
+  const refreshMessages = useRef<() => void>(() => {});
+  const scope = useRef({ client, serverId: host.serverId, id });
+  if (scope.current.client !== client || scope.current.serverId !== host.serverId || scope.current.id !== id)
+    scope.current = { client, serverId: host.serverId, id };
   useEffect(() => {
     let active = true;
+    sending.current = false;
+    setBusy(false);
     hydration.current = Promise.all([
       cache.getMessages(host.serverId, id),
       cache.getDraft(host.serverId, id),
@@ -85,15 +92,58 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     let request: AbortController | undefined;
     let active = true;
     let generation = 0;
+    let pollTimer: ReturnType<typeof setTimeout> | undefined;
+    let pollRequest: AbortController | undefined;
+    let pollFailures = 0;
+    let pollAgain = false;
+    let connectionStatus: ConnectionStatus = "connecting";
     let foreground =
       AppState.currentState !== "background" &&
       AppState.currentState !== "inactive";
+    const visible = () => active && foreground && focused;
+    function stopPolling() {
+      clearTimeout(pollTimer);
+      pollTimer = undefined;
+      pollRequest?.abort();
+      pollRequest = undefined;
+    }
+    function schedulePoll(delay = 3000, force = false) {
+      if (!visible() || connectionStatus === "unauthorized") return;
+      if (force) pollAgain = true;
+      if (pollRequest || (pollTimer && !force)) return;
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(() => { pollTimer = undefined; void poll(); }, delay);
+    }
+    async function poll() {
+      if (!visible() || pollRequest) return;
+      const run = generation;
+      const controller = new AbortController();
+      pollRequest = controller;
+      pollAgain = false;
+      try {
+        const page = await client.messages(id, { signal: controller.signal });
+        if (!visible() || generation !== run) return;
+        setMessages(previous => mergeMessages(previous, page.messages));
+        pollFailures = 0;
+      } catch {
+        if (visible() && generation === run) pollFailures++;
+      } finally {
+        if (pollRequest === controller) pollRequest = undefined;
+        if (visible() && generation === run && (connectionStatus !== "connected" || pollAgain))
+          schedulePoll(Math.min(30000, 3000 * 2 ** Math.min(pollFailures, 4)));
+      }
+    }
+    const refresh = () => schedulePoll(0, true);
+    refreshMessages.current = refresh;
     async function start() {
       if (!active || !foreground || !focused) return;
       await hydration.current;
       if (!active || !foreground || !focused) return;
       const run = ++generation;
       const current = () => active && foreground && focused && generation === run;
+      stopPolling();
+      connectionStatus = "connecting";
+      pollFailures = 0;
       stream?.close();
       request?.abort();
       request = new AbortController();
@@ -109,7 +159,15 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       stream = client.connect({
         conversationId: id,
         onStatus: (value) => {
-          if (current()) setStatus(value);
+          if (!current()) return;
+          connectionStatus = value;
+          setStatus(value);
+          if (value === "unauthorized") {
+            pollAgain = false;
+            stopPolling();
+          } else if (value === "connected") {
+            if (!pollAgain) { clearTimeout(pollTimer); pollTimer = undefined; }
+          } else schedulePoll();
         },
         onError: (err) => {
           if (current()) setError(errorText(err));
@@ -152,6 +210,7 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       if (foreground) void start();
       else {
         generation++;
+        stopPolling();
         stream?.close();
         request?.abort();
         setStatus("closed");
@@ -160,6 +219,8 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     return () => {
       active = false;
       generation++;
+      stopPolling();
+      if (refreshMessages.current === refresh) refreshMessages.current = () => {};
       alive.current = false;
       stream?.close();
       request?.abort();
@@ -193,6 +254,8 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
     }
   }
   async function send(attachments: Attachment[] = [], sessionId?: string, voiceText?: string) {
+    const sendScope = scope.current;
+    const current = () => alive.current && scope.current === sendScope;
     const outgoing = voiceText ?? draft;
     if (sending.current || (voiceText !== undefined && pending) || (!pending && !outgoing.trim() && !attachments.length))
       return false;
@@ -203,14 +266,17 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
       if (voiceText !== undefined) {
         await draftWrites.current;
         await cache.setDraft(host.serverId, id, outgoing);
+        if (!current()) return false;
         setDraftState(outgoing);
       }
       const session = await tokenStore.get();
+      if (!current()) return false;
       if (!session)
         throw new Error("This device is not paired. Reconnect in Settings.");
       let payload = pending;
       if (!payload) {
         const target = await client.target(id);
+        if (!current()) return false;
         if (sessionId && sessionId !== target.sessionId)
           throw new Error(
             "The host moved to a new conversation part. Remove and attach the files again before sending.",
@@ -224,6 +290,7 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
           attachments,
         };
         await writeCache(host.serverId, `pending:${id}`, payload);
+        if (!current()) return false;
         setPending(payload);
       }
       const { deviceId, ...submission } = payload;
@@ -231,6 +298,14 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
         storedDeviceId: deviceId,
         currentDeviceId: session.deviceId,
       });
+      if (result.status === "accepted") {
+        // An old screen may finish after navigation; cache its own receipt, but
+        // never insert it into a different chat or clear that chat's draft.
+        void client.rememberAcceptedSubmission(submission, result).catch(err => {
+          if (current()) setError(`Sent, but the local cache could not be saved: ${errorText(err)}`);
+        });
+      }
+      if (!current()) return false;
       if (result.status === "rejected") {
         setRejected(true);
         throw new Error(
@@ -242,21 +317,31 @@ export function useConversation(client: MobileClient, host: Host, id: string, ca
           "The host cannot yet confirm this send. Keep the original request and check again; it will not be sent automatically.",
         );
       setRejected(false);
+      const acknowledged = acceptedSubmissionMessage(submission, result);
+      setMessages(previous => mergeMessages(previous, [acknowledged]));
+      // Receipt confirmation is independent of the WebSocket and cache latency.
+      refreshMessages.current();
       lastSubmission.current = { requestId: payload.requestId, sessionId: payload.sessionId };
       setReceipt("Sent");
       await draftWrites.current;
+      if (!current()) return false;
       await cache.setDraft(host.serverId, id, "");
       await writeCache(host.serverId, `pending:${id}`, null);
+      if (!current()) return false;
       setPending(null);
       setDraftState("");
       return true;
     } catch (err) {
-      if (definitelyRejected(err)) setRejected(true);
-      setError(errorText(err));
+      if (current()) {
+        if (definitelyRejected(err)) setRejected(true);
+        setError(errorText(err));
+      }
       return false;
     } finally {
-      sending.current = false;
-      if (alive.current) setBusy(false);
+      if (scope.current === sendScope) {
+        sending.current = false;
+        if (alive.current) setBusy(false);
+      }
     }
   }
   async function cancel() {

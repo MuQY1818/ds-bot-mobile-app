@@ -111,3 +111,46 @@ test("pure resize while following issues one correction per changed size, never 
   }
   assert.deepEqual(h.calls, [false]); assert.deepEqual(h.notices, []);
 });
+
+test("bottom idle: alternating virtualized height estimates cannot keep moving the viewport", () => {
+  for (const delta of [0.5, 1, 40, 400]) {
+    const h = ready();
+    for (let i = 0; i < 40; i++) {
+      h.controller.resize("content", 390, 60000 + (i % 2 ? delta : -delta));
+      h.controller.tailChanged(chatTailVersion([...history]));
+      h.frame();
+    }
+    assert.ok(h.calls.length <= 2, `height oscillation ${delta}: ${h.calls.length} scroll commands`);
+    assert.deepEqual(h.notices, []);
+    for (let i = 0; i < 40; i++) { h.controller.resize("content", 390, 60000 + (i % 2 ? 80 : -80)); h.frame(); }
+    assert.ok(h.calls.length <= 2);
+    const settled = h.calls.length;
+    for (let i = 0; i < 40; i++) { h.controller.resize("content", 390, 60000 + (i % 2 ? 160 : -160)); h.frame(); }
+    assert.equal(h.calls.length, settled);
+  }
+});
+
+test("user reaching bottom grants no scroll or measurement loop without a changed tail", () => {
+  const h = ready();
+  h.controller.touchStart(); h.controller.beginDrag();
+  h.controller.scroll(59400, 60000, 700);
+  h.controller.touchEnd(); h.controller.endDrag(); h.controller.momentumStart();
+  h.controller.momentumEnd(); h.settle(); h.frame();
+  for (let i = 0; i < 30; i++) { h.controller.resize("content", 390, 60000 + (i % 2 ? 40 : -40)); h.frame(); }
+  assert.deepEqual(h.calls, []);
+  h.controller.tailChanged(chatTailVersion([...history, message(600, 'Actual new reply')])); h.frame();
+  assert.deepEqual(h.calls, [false]);
+});
+
+test("keyboard viewport and explicit send grant bounded corrections while historical reading remains anchored", () => {
+  const h = ready();
+  h.controller.resize("viewport", 390, 440); h.frame();
+  for (let i = 0; i < 30; i++) { h.controller.resize("content", 390, 60000 + (i % 2 ? 40 : -40)); h.frame(); }
+  assert.ok(h.calls.length <= 2);
+  readOlder(h); const before = h.calls.length;
+  h.controller.resize("viewport", 390, 700); h.controller.resize("content", 390, 61000); h.frame();
+  assert.equal(h.calls.length, before);
+  h.controller.sent(); h.frame(); assert.equal(h.calls.length, before + 1);
+  for (let i = 0; i < 30; i++) { h.controller.resize("content", 390, 61000 + (i % 2 ? 40 : -40)); h.frame(); }
+  assert.ok(h.calls.length <= before + 3);
+});

@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml"><img src="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml/badge.svg?branch=main" alt="Build and checks"></a>
-  <a href="https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.3"><img src="https://img.shields.io/badge/source-0.1.3--preview.3-blue" alt="Source preview 0.1.3-preview.3"></a>
+  <a href="https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.4-preview.1"><img src="https://img.shields.io/badge/source-0.1.4--preview.1-blue" alt="Source preview 0.1.4-preview.1"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0 license"></a>
 </p>
 
@@ -14,7 +14,7 @@
 
 DS Bot Mobile App provides a native iOS / Android client and a separate desktop companion plugin for self-hosted [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) and [DS Bot](https://github.com/Fei2411/DeepSeek-Bot). The desktop plugin manages pairing and devices; **DS Bot Mobile Bridge** handles authentication and transport. Models and tools continue running on the computer.
 
-> **Source preview**: `0.1.3-preview.3` contains native App `0.1.3` and desktop companion `0.2.0`; Mobile Bridge remains at `0.0.6`. Companion and Bridge are packaged, installed and enabled independently. **Signed IPA/APK builds are not available**; build the native client with your own platform toolchain. Browser access is provided by [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web).
+> **Source preview**: `0.1.4-preview.1` contains native App `0.1.4` and desktop companion `0.2.0`; Mobile Bridge remains at `0.0.6`. Companion and Bridge are packaged, installed and enabled independently. **Signed IPA/APK builds are not available**; build the native client with your own platform toolchain. Browser access is provided by [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web).
 
 ## Preview
 
@@ -23,7 +23,7 @@ DS Bot Mobile App provides a native iOS / Android client and a separate desktop 
 | <img src="docs/images/iphone-conversations.png" width="260" alt="Conversations"> | <img src="docs/images/iphone-chat.png" width="260" alt="Direct messages"> | <img src="docs/images/iphone-group.png" width="260" alt="Group chat"> |
 
 <p align="center">
-  <img src="docs/images/phone-access-app.png" width="500" alt="Desktop Phone access App tab and device management">
+  <img src="docs/images/phone-access-app.png" width="960" alt="Desktop Phone access App tab and device management">
 </p>
 
 *Captured on a physical iPhone with example conversations. The desktop device panel comes from the installed companion; pairing QR codes and access credentials are excluded.*
@@ -79,7 +79,7 @@ Bridge text transport and desktop pairing management are implemented and checked
 | iOS build | macOS and Xcode; your own signing identity for a device |
 | Android build | Android SDK and its build toolchain |
 
-**Compatibility prerequisite**: Bridge requires `bridge.describe`, stable `bridge.submit` and `bridge.redact` interfaces. The pristine npm DS Bot `0.1.7` does not provide them. This project's [release](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.3) includes a separately identified `ds-bot-0.1.7-codex.1.tgz`. See [installation](docs/installation.md) for profile selection and migration.
+**Compatibility prerequisite**: Bridge requires `bridge.describe`, stable `bridge.submit` and `bridge.redact` interfaces. The pristine npm DS Bot `0.1.7` does not provide them. This project's [release](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.4-preview.1) includes a separately identified `ds-bot-0.1.7-codex.1.tgz`. See [installation](docs/installation.md) for profile selection and migration.
 
 ### 1. Prepare the computer
 

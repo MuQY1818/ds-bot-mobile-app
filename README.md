@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml"><img src="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml/badge.svg?branch=main" alt="构建与检查"></a>
-  <a href="https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.3"><img src="https://img.shields.io/badge/source-0.1.3--preview.3-blue" alt="源码预览 0.1.3-preview.3"></a>
+  <a href="https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.4-preview.1"><img src="https://img.shields.io/badge/source-0.1.4--preview.1-blue" alt="源码预览 0.1.4-preview.1"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0 许可"></a>
 </p>
 
@@ -14,7 +14,7 @@
 
 DS Bot Mobile App 为自托管 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）与 [DS Bot](https://github.com/Fei2411/DeepSeek-Bot) 提供 iOS / Android 原生客户端和独立的电脑端配套插件。电脑端负责可视化配对与设备管理，**DS Bot Mobile Bridge** 负责认证与消息传输；模型与工具仍在电脑端运行。
 
-> **源码预览**：当前版本为 `0.1.3-preview.3`，原生 App 版本 `0.1.3`，电脑端配套插件 `0.2.0`，Mobile Bridge 保持 `0.0.6`。配套插件与 Bridge 分别打包、安装和启停；Mobile Web `0.4.0` 与本插件共用“手机访问”弹窗；**尚未提供签名 IPA/APK**。原生客户端需使用自己的平台工具链构建。浏览器入口由 [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) 提供。
+> **源码预览**：当前版本为 `0.1.4-preview.1`，原生 App 版本 `0.1.4`，电脑端配套插件 `0.2.0`，Mobile Bridge 保持 `0.0.6`。配套插件与 Bridge 分别打包、安装和启停；Mobile Web `0.4.0` 与本插件共用“手机访问”弹窗；**尚未提供签名 IPA/APK**。原生客户端需使用自己的平台工具链构建。浏览器入口由 [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) 提供。
 
 ## 界面预览
 
@@ -23,7 +23,7 @@ DS Bot Mobile App 为自托管 [DeepSeek Harness](https://github.com/deepseek-ai
 | <img src="docs/images/iphone-conversations.png" width="260" alt="会话"> | <img src="docs/images/iphone-chat.png" width="260" alt="单聊"> | <img src="docs/images/iphone-group.png" width="260" alt="群聊"> |
 
 <p align="center">
-  <img src="docs/images/phone-access-app.png" width="500" alt="电脑端手机访问 App 标签与设备管理">
+  <img src="docs/images/phone-access-app.png" width="960" alt="电脑端手机访问 App 标签与设备管理">
 </p>
 
 *iPhone 真机截图，会话使用示例数据。电脑端设备管理截图来自已安装运行的配套插件，未展示配对二维码或访问凭据。*
@@ -79,7 +79,7 @@ Bridge 文字链路和电脑端配对管理界面已实现，并使用隔离宿�
 | iOS 构建 | macOS、Xcode；真机使用自己的签名身份 |
 | Android 构建 | Android SDK 与对应构建工具链 |
 
-**兼容性前提**：Bridge 依赖 `bridge.describe`、稳定的 `bridge.submit` 与 `bridge.redact` 接口。原版 npm DS Bot `0.1.7` 不包含这些接口；本项目[发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.3-preview.3)提供单独标识的 `ds-bot-0.1.7-codex.1.tgz`。安装位置与迁移步骤见[安装指南](docs/installation.md)。
+**兼容性前提**：Bridge 依赖 `bridge.describe`、稳定的 `bridge.submit` 与 `bridge.redact` 接口。原版 npm DS Bot `0.1.7` 不包含这些接口；本项目[发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.4-preview.1)提供单独标识的 `ds-bot-0.1.7-codex.1.tgz`。安装位置与迁移步骤见[安装指南](docs/installation.md)。
 
 ### 1. 准备电脑端
 

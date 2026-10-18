@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MobileClient, MobileError, MemoryTokenStore, MemoryCache, validateServerUrl, mergeMessages, applyConversationEvent } from '../index.js';
+import { MobileClient, MobileError, MemoryTokenStore, MemoryCache, validateServerUrl, mergeMessages, applyConversationEvent, acceptedSubmissionMessage } from '../index.js';
 
 const session = (patch = {}) => ({
   accessToken: 'test-access', refreshToken: 'test-refresh', serverId: 'host-1',
@@ -21,6 +21,35 @@ function clientWith(handler, options = {}) {
   });
   return { client, tokenStore };
 }
+
+test('accepted receipts survive caching and reconcile with canonical transcript rows in either arrival order', async () => {
+  const payload = { conversationId: 'bot', sessionId: 'part', requestId: 'stable-request', text: 'accepted fixture text' };
+  const receipt = { status: 'accepted', requestId: payload.requestId, conversationId: 'bot', sessionId: 'part', createdAt: 1000 };
+  const local = acceptedSubmissionMessage(payload, receipt);
+  const canonical = { ...local, id: 'canonical', seq: 10, localSubmission: undefined };
+  for (const [first, second] of [[[local], [canonical]], [[canonical], [local]]]) {
+    const result = mergeMessages(first, second);
+    assert.equal(result.length, 1); assert.equal(result[0].id, 'canonical');
+  }
+  const cache = new MemoryCache();
+  const { client } = clientWith(async () => response({ messages: [canonical], cursor: null, sessionId: 'part' }), { cache });
+  await Promise.all([client.messages('bot'), client.rememberAcceptedSubmission(payload, receipt)]);
+  assert.equal((await client.getCachedMessages('bot')).length, 1);
+  assert.equal((await client.getCachedMessages('bot'))[0].id, 'canonical');
+  for (const status of ['unknown', 'rejected']) assert.throws(() => acceptedSubmissionMessage(payload, { ...receipt, status }), { code: 'invalid_receipt' });
+  assert.throws(() => acceptedSubmissionMessage(payload, { ...receipt, requestId: 'other-request' }), { code: 'invalid_receipt' });
+  assert.throws(() => acceptedSubmissionMessage(payload, { ...receipt, sessionId: 'other-part' }), { code: 'invalid_receipt' });
+  client.dispose();
+});
+
+test('1000-message repeated snapshots reuse rows and array identity while an actual changed row updates once', () => {
+  const history = Array.from({ length: 1000 }, (_, seq) => ({ id: `m-${seq}`, sessionId: 'history', seq, role: 'assistant',
+    text: 'Synthetic long history paragraph. '.repeat(30), createdAt: seq + 1, author: { id: 'fixture-bot', name: 'Fixture Bot' } }));
+  for (let i = 0; i < 20; i++) assert.equal(mergeMessages(history, structuredClone(history)), history);
+  const update = { ...history[999], text: 'Changed reply' };
+  const next = mergeMessages(history, [update]);
+  assert.notEqual(next, history); assert.equal(next[0], history[0]); assert.equal(next[999].text, 'Changed reply');
+});
 
 test('file attachment requests bind the download to the visible message position', async () => {
   let request
