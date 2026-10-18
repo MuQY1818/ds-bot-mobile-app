@@ -1,0 +1,18 @@
+{
+  "platforms": [
+    "android",
+    "apple"
+  ],
+  "android": {
+    "modules": [
+      "app.dsbot.notifications.BackgroundNotificationsModule",
+      "app.dsbot.notifications.LocalTLSModule"
+    ]
+  },
+  "apple": {
+    "modules": [
+      "BackgroundNotificationsModule",
+      "LocalTLSModule"
+    ]
+  }
+}

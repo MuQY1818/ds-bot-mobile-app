@@ -1,0 +1,9 @@
+{
+  "name": "@ds-bot/background-notifications",
+  "version": "0.1.0",
+  "description": "Receive DSH notification metadata while the mobile app is running in the background",
+  "private": true,
+  "license": "Apache-2.0",
+  "author": "DS Bot contributors",
+  "homepage": "https://github.com/QingJ01/DS-Bot-App"
+}

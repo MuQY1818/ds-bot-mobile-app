@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+dist/
+web-build/
+/android/
+/ios/
+*.tsbuildinfo
+google-services.json
+GoogleService-Info.plist
+credentials.json
+*.p8
+*.p12
+*.mobileprovision
+
+/signing/
+*.cer

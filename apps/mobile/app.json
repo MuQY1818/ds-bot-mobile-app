@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "DS Bot Mobile",
+    "slug": "ds-bot-mobile-app",
+    "version": "0.1.2",
+    "orientation": "portrait",
+    "scheme": "dsbot",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.dsbot.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocalNetworkUsageDescription": "Connect securely to your paired DS Bot computer on Wi-Fi."
+      }
+    },
+    "android": {
+      "package": "app.dsbot.mobile",
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "allowBackup": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#fcfcfc"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "name": "DS Bot Mobile App"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Scan your host's pairing QR code."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Attach a photo to your Bot conversation.",
+          "cameraPermission": "Take a photo to share with your Bot."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Record a message for transcription on your host."
+        }
+      ],
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-asset",
+      "expo-notifications"
+    ],
+    "icon": "./assets/icon.png"
+  }
+}

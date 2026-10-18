@@ -1,0 +1,113 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import type { Message } from "@ds-bot/mobile-sdk";
+import { chatTailVersion, createChatScrollController } from "../src/logic/chat-scroll.ts";
+
+function harness() {
+  const frames = new Set<() => void>();
+  const delays = new Set<() => void>();
+  const calls: boolean[] = [];
+  const notices: boolean[] = [];
+  const schedule = (queue: Set<() => void>, callback: () => void) => { queue.add(callback); return () => { queue.delete(callback); }; };
+  const flush = (queue: Set<() => void>) => { const batch = [...queue]; queue.clear(); batch.forEach(callback => callback()); };
+  const controller = createChatScrollController({
+    scrollToEnd: animated => calls.push(animated), unreadChanged: value => notices.push(value),
+    frame: callback => schedule(frames, callback), delay: callback => schedule(delays, callback),
+  });
+  return { controller, calls, notices, frame: () => flush(frames), settle: () => flush(delays) };
+}
+const message = (seq: number, text = `Long history ${seq}\n${"Synthetic QA text. ".repeat(20)}`): Message => ({ id: `m-${seq}`, sessionId: "scroll-qa", seq, role: "assistant", text, createdAt: seq + 1 });
+const history = Array.from({ length: 500 }, (_, index) => message(index + 100));
+function ready() {
+  const h = harness();
+  h.controller.tailChanged(chatTailVersion(history));
+  h.controller.resize("viewport", 390, 700);
+  h.controller.resize("content", 390, 60000);
+  h.frame();
+  assert.deepEqual(h.calls, [false]);
+  h.calls.length = 0;
+  return h;
+}
+function readOlder(h: ReturnType<typeof harness>) {
+  h.controller.touchStart(); h.controller.beginDrag();
+  h.controller.scroll(2000, 60000, 700);
+  h.controller.touchEnd(); h.controller.endDrag(); h.settle();
+}
+
+test("500-message history: dock/viewport resize without a new tail never signals unread or loops", () => {
+  const h = ready(); readOlder(h);
+  for (let i = 0; i < 40; i++) {
+    h.controller.resize("viewport", 390, 700 - i);
+    h.controller.resize("content", 390, 60000 + i * 10);
+    h.controller.tailChanged(chatTailVersion([...history]));
+    h.frame();
+  }
+  assert.deepEqual(h.calls, []); assert.deepEqual(h.notices, []);
+});
+
+test("drag immediately cancels queued follow before first scroll event and blocks initial timer/layout/stream/send", () => {
+  const h = ready();
+  h.controller.resize("content", 390, 60010);
+  h.controller.touchStart(); h.controller.beginDrag();
+  h.controller.initialPosition();
+  h.controller.resize("viewport", 390, 500);
+  h.controller.tailChanged(chatTailVersion([...history, message(600)]));
+  h.controller.sent(); h.frame();
+  assert.deepEqual(h.calls, []); assert.deepEqual(h.notices, [true]);
+});
+
+test("momentum and end-drag handoff suppress scroll commands until settling at bottom", () => {
+  const h = ready();
+  h.controller.beginDrag(); h.controller.scroll(2000, 60000, 700);
+  h.controller.endDrag();
+  h.controller.resize("content", 390, 60010); h.frame();
+  h.controller.momentumStart(); h.settle();
+  h.controller.tailChanged(chatTailVersion([...history, message(600)]));
+  h.controller.resize("content", 390, 60100); h.frame();
+  assert.deepEqual(h.calls, []);
+  h.controller.scroll(59400, 60100, 700); h.controller.momentumEnd(); h.frame();
+  assert.deepEqual(h.calls, [false]); assert.deepEqual(h.notices, [true, false]);
+});
+
+test("reading history: only new tail or streaming tail content signals unread; jump restores real follow", () => {
+  const h = ready(); readOlder(h);
+  const added = [...history, message(600, "First chunk")];
+  h.controller.tailChanged(chatTailVersion(added)); h.frame();
+  assert.deepEqual(h.notices, [true]); assert.deepEqual(h.calls, []);
+  h.controller.jumpToBottom(); h.frame();
+  assert.deepEqual(h.calls, [true]); assert.deepEqual(h.notices, [true, false]);
+  h.controller.tailChanged(chatTailVersion([...history, message(600, "First chunk, second chunk")]));
+  h.controller.resize("content", 390, 60300); h.frame();
+  assert.deepEqual(h.calls, [true, false]);
+  for (let i = 0; i < 20; i++) { h.controller.resize("content", 390, 60300); h.frame(); }
+  assert.deepEqual(h.calls, [true, false]);
+});
+
+test("load older leaves anchoring to native list and does not notify even with cloned metadata", () => {
+  const h = ready(); h.controller.loadOlder();
+  const older = [...Array.from({ length: 100 }, (_, i) => message(i)), ...history];
+  h.controller.tailChanged(chatTailVersion(older));
+  h.controller.tailChanged(chatTailVersion(older.map(item => ({ ...item, pending: false, updatedSeq: 1000 }))));
+  h.controller.resize("content", 390, 80000); h.frame();
+  assert.deepEqual(h.calls, []); assert.deepEqual(h.notices, []);
+  h.controller.tailChanged(chatTailVersion([...older.slice(0, -1), message(599, "Actual streamed text")]));
+  assert.deepEqual(h.notices, [true]);
+});
+
+test("a tail change without height growth still follows; dispose cancels outstanding callbacks", () => {
+  const h = ready();
+  h.controller.tailChanged(chatTailVersion([...history, message(600, "chunk")])); h.frame();
+  assert.deepEqual(h.calls, [false]);
+  h.controller.resize("content", 390, 60010); h.controller.dispose(); h.frame(); h.settle();
+  assert.deepEqual(h.calls, [false]);
+});
+
+test("pure resize while following issues one correction per changed size, never recursive scroll correction", () => {
+  const h = ready();
+  h.controller.resize("viewport", 390, 500); h.frame();
+  for (let i = 0; i < 50; i++) {
+    h.controller.scroll(59300, 60000, 500);
+    h.controller.resize("viewport", 390, 500); h.controller.resize("content", 390, 60000); h.frame();
+  }
+  assert.deepEqual(h.calls, [false]); assert.deepEqual(h.notices, []);
+});

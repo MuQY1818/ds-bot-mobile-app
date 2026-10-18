@@ -1,0 +1,11 @@
+# Installing/selecting this bundle opens no listener and creates no state.
+# Configure this row in the owner's profile to enable transport explicitly.
+- insert:
+    - id: ds-bot-mobile-bridge
+      name: ds-bot-mobile-bridge
+      config:
+        enabled: false
+        host: 127.0.0.1
+        port: 0
+        allowedOrigins: []
+        devAllowInsecure: false

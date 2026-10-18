@@ -1,0 +1,56 @@
+--- a/src/host/channel.js
++++ b/src/host/channel.js
+@@ -80,7 +80,7 @@
+   })
+   // What a host that only reads the team may still answer.
+   // Updates change the dsh profile, not the team, so a reading host may run them too.
+-  const READS = new Set(['state', 'models', 'efforts', 'earlier', 'room-progress', 'exchange', 'exchange-text', 'file-text', 'usage', 'schedules', 'memory-view', 'browser-wait', 'browser-result', 'diagnostics', 'diagnostics-log', 'diagnostics-clear', 'update-check', 'update-install', 'dsh-update-install', 'repo-stars', 'approval-answer'])
++  const READS = new Set(['bridge.describe', 'bridge.redact', 'state', 'models', 'efforts', 'earlier', 'room-progress', 'exchange', 'exchange-text', 'file-text', 'usage', 'schedules', 'memory-view', 'browser-wait', 'browser-result', 'diagnostics', 'diagnostics-log', 'diagnostics-clear', 'update-check', 'update-install', 'dsh-update-install', 'repo-stars', 'approval-answer'])
+ 
+   function setPrefs(body) {
+     if (body.theme !== undefined) {
+@@ -286,6 +286,44 @@
+           }
+           await rt.save()
+           return ok(true)
++        }
++        case 'bridge.describe':
++          return ok({ version: 1, stableRequestId: true, redactedText: true, groups: true, groupProjection: 1, attachments: false })
++        case 'bridge.redact': {
++          await rt.loadSecrets()
++          const id = body.conversationId
++          const room = Object.hasOwn(state.rooms, id) ? state.rooms[id] : undefined
++          const own = Object.hasOwn(state.bots, id) && rt.chatOf(id) === body.expectedSessionId
++          if (!own && !(room && id === body.expectedSessionId && JSON.stringify(body.expectedMembers) === JSON.stringify(room.members))) return fail('Refresh the conversation', 'bot/stale')
++          if (!Array.isArray(body.texts) || body.texts.length > 200 || body.texts.some(text => typeof text !== 'string' || text.length > 100000)) return fail('Invalid text batch', 'bot/invalid')
++          return ok({ texts: body.texts.map(text => rt.redactSecrets(text)) })
++        }
++        case 'bridge.submit': {
++          if (body.version !== 1 || typeof body.requestId !== 'string' || !/^[a-zA-Z0-9._:-]{1,256}$/.test(body.requestId)) return fail('Invalid request ID', 'bot/invalid')
++          if (!Array.isArray(body.content) || body.content.length !== 1 || body.content[0]?.type !== 'text' || typeof body.content[0].text !== 'string' || !body.content[0].text.trim() || body.content[0].text.length > 100000 || body.content[0].text.includes('dsh-session:')) return fail('Plain text required', 'bot/invalid')
++          await rt.load()
++          const id = body.conversationId
++          const initialRoom = Object.hasOwn(state.rooms, id) ? state.rooms[id] : undefined
++          const membership = initialRoom ? JSON.stringify({ members: initialRoom.members, admin: initialRoom.admin ?? null, mode: initialRoom.mode ?? 'admin' }) : undefined
++          const check = () => {
++            if (rt.readOnly() !== undefined) throw Object.assign(new Error('Team is read-only'), { code: 'bot/read-only' })
++            const room = Object.hasOwn(state.rooms, id) ? state.rooms[id] : undefined
++            if (initialRoom) {
++              if (!room || body.expectedSessionId !== id || JSON.stringify(body.expectedMembers) !== JSON.stringify(room.members)
++                || room.members.some(member => !Object.hasOwn(state.bots, member))
++                || JSON.stringify({ members: room.members, admin: room.admin ?? null, mode: room.mode ?? 'admin' }) !== membership) throw Object.assign(new Error('Refresh group membership'), { code: 'bot/stale' })
++            } else if (room || !Object.hasOwn(state.bots, id) || rt.chatOf(id) !== body.expectedSessionId || rt.groupOwners?.has(body.expectedSessionId)) {
++              throw Object.assign(new Error('Refresh the conversation'), { code: 'bot/stale' })
++            }
++          }
++          check()
++          await rt.ensureCapabilities(body.expectedSessionId)
++          await rt.refresh()
++          check()
++          signal.throwIfAborted()
++          const result = await ctx.sessionController.prompt({ requestId: body.requestId, sessionId: body.expectedSessionId, mode: 'queue', content: body.content }, signal)
++          if (result?.accepted !== true) return fail('Admission is unconfirmed', 'bot/unconfirmed')
++          return ok({ accepted: true, requestId: body.requestId, sessionId: body.expectedSessionId })
+         }
+         case 'send': {
+           const text = String(body.text ?? '').trim()

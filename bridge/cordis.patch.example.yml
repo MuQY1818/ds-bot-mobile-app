@@ -1,0 +1,17 @@
+# Owner-applied config override after selecting the ds-bot-mobile-bridge bundle.
+# Replace the placeholders; a config override replaces the complete row config.
+- id: ds-bot-mobile-bridge
+  config:
+    enabled: true
+    home: /ABSOLUTE/DEDICATED/bridge-state
+    host: 127.0.0.1
+    port: 0
+    publicUrl: https://YOUR-EXISTING-HTTPS-ORIGIN.example
+    allowedOrigins: []
+    devAllowInsecure: false
+    # Optional direct TLS: set both certPath and keyPath to owner-supplied files.
+    # For a reverse proxy choose an available stable port explicitly, or discover
+    # the allocated listener via authenticated operator status before forwarding.
+
+# Isolated loopback tests may omit publicUrl and set devAllowInsecure: true.
+# This bundle does not configure certificates, proxies, accounts or Tailscale.

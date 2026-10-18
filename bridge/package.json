@@ -1,0 +1,65 @@
+{
+  "name": "ds-bot-mobile-bridge",
+  "version": "0.0.6",
+  "description": "DS Bot Mobile Bridge \u2014 secure pairing and scoped access to an existing DS Bot team",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "index.mjs",
+    "src/adapter.mjs",
+    "src/auth.js",
+    "src/config.mjs",
+    "src/projection.js",
+    "src/server.js",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "README.zh.md",
+    "COMPATIBILITY.md",
+    "config.schema.json",
+    "cordis.patch.yml",
+    "cordis.patch.example.yml",
+    "src/group-projection.mjs",
+    "src/actions.mjs",
+    "src/operator.mjs",
+    "src/project-avatar.mjs"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:integration": "node test/integration.mjs",
+    "fixture": "node test/fixture-host.mjs",
+    "lint": "oxlint --deny-warnings index.mjs src test",
+    "test:delivery": "node test/delivery.mjs",
+    "test:prepare": "node test/prepare.mjs"
+  },
+  "dependencies": {
+    "ws": "8.18.3"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
+  "devDependencies": {
+    "oxlint": "1.76.0"
+  },
+  "homepage": "https://github.com/MuQY1818/ds-bot-mobile-app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MuQY1818/ds-bot-mobile-app.git",
+    "directory": "bridge"
+  },
+  "bugs": {
+    "url": "https://github.com/MuQY1818/ds-bot-mobile-app/issues"
+  }
+}

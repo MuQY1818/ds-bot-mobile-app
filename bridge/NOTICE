@@ -1,0 +1,42 @@
+# DS Bot mobile bridge provenance
+
+The extracted `src/auth.js`, `src/projection.js` and transport in `src/server.js`
+originate in this same Apache-2.0 licensed repository at commit
+253407cf76062b2aa60bc5d039415aaa1c9867c4, under `ds-bot/src/mobile/`.
+The transport is adapted to this independent entry and its restricted capabilities.
+Candidate 0.0.5 composes this repository's reviewed group-bridge entry/adapter,
+group projection and restricted actions-bridge module; those source directories
+are read-only inputs to this candidate. The Apache-2.0 LICENSE is retained from
+the bridge/group package lineage. Candidate fixture code copies the reviewed
+npm DS Bot group candidate into its own ignored home and retains that package's
+LICENSE; neither the patched fixture nor its test operator is in the tarball.
+See the included LICENSE. The new entry and adapter are original work in this repository.
+
+The repository's review-only candidate patch (not included in this release tarball)
+targets the publicly published npm `ds-bot@0.1.7` package,
+Apache-2.0, npm tarball integrity:
+sha512-xRiXIpDfemkZ2l6lDwu7ZKSnn0a2c26BsZ7e+eEOkQ1AknXOKretK52Yuq1yfG6p4XCObmUiXR1tdGo7EQIStw==
+The existing source fixture was downloaded to an ignored isolated directory;
+this candidate reuses it by copying it into its own ignored test home.
+It neither imports nor modifies a user's installed DS Bot or DSH files.
+
+`ws@8.18.3` is a public MIT-licensed dependency; its license ships with that package.
+`@deepseek-ai/schemastery@3.18.5` is a public MIT-licensed peer dependency.
+Public DSH 0.2.0-rc.2 and 0.2.1-rc.2 dependencies are fixture-only and retain their own licenses.
+
+DS Bot avatar source attribution
+
+This candidate reuses the original DS Bot characters, inks and deterministic
+look algorithms from DS Bot 0.1.7 by Fei2411 (npm maintainer: feizuu).
+Upstream: https://github.com/Fei2411/DeepSeek-Bot
+Published source commit: 939a6635830cb5b246e7dd19c67b0e1352ad1c07
+Public npm package: https://registry.npmjs.org/ds-bot/-/ds-bot-0.1.7.tgz
+License: Apache License, Version 2.0; unchanged upstream LICENSE is retained in
+LICENSE. The npm tarball did not contain a separate NOTICE file.
+This attribution does not replace any upstream copyright or license notice.
+
+Changes made for this candidate: extract the original character table into JSON;
+add a bounded avatar projection, exact public-image grants, compatibility tests,
+and narrow candidate patches for the mobile adapter and React Native renderer.
+The shapes, SVG paths, eye coordinates, inks and default selection algorithms
+are unchanged. No new artwork or UI dependencies were added.

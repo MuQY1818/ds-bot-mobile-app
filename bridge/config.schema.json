@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DS Bot Mobile Bridge configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "enabled": { "type": "boolean", "default": false },
+    "home": { "type": "string", "minLength": 1, "description": "Dedicated absolute bridge directory, separate from DSH_HOME. No default." },
+    "host": { "type": "string", "minLength": 1, "default": "127.0.0.1" },
+    "port": { "type": "integer", "minimum": 0, "maximum": 65535, "default": 0 },
+    "publicUrl": { "type": "string", "format": "uri", "description": "Existing HTTPS origin without credentials, path or query; required without direct TLS except in explicit loopback development mode." },
+    "allowedOrigins": { "type": "array", "items": { "type": "string", "format": "uri" }, "default": [] },
+    "certPath": { "type": "string", "minLength": 1 },
+    "keyPath": { "type": "string", "minLength": 1 },
+    "devAllowInsecure": { "type": "boolean", "default": false },
+    "name": { "type": "string", "minLength": 1, "default": "DS Bot" }
+  },
+  "allOf": [
+    { "if": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] }, "then": { "required": ["home"] } },
+    { "if": { "required": ["certPath"] }, "then": { "required": ["keyPath"] } },
+    { "if": { "required": ["keyPath"] }, "then": { "required": ["certPath"] } }
+  ]
+}
