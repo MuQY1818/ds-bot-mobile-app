@@ -19,12 +19,10 @@ DS Bot Mobile App provides a native iOS / Android client and a separate desktop 
 ## Preview
 
 <p align="center">
-  <img src="docs/images/conversations.png" width="230" alt="Conversation list example">
-  <img src="docs/images/chat.png" width="230" alt="Direct conversation example">
-  <img src="docs/images/group.png" width="230" alt="Group conversation with member attribution">
+  <img src="docs/images/phone-access-app.png" width="500" alt="Running desktop App access panel showing service readiness and an authorized device">
 </p>
 
-*Conversation list, direct chat and group chat. These design previews use synthetic data rendered by the actual React Native components on the Web. See [design notes](docs/design.md).*
+*The deployed desktop companion under **Phone access → App**, showing the connection service and authorized devices. Cropped to the dialog without generating or displaying a pairing QR; no device identifiers or credentials are included. This is the desktop interface. Native component previews with example data are in the [design notes](docs/design.md); they are not physical-phone screenshots.*
 
 ## Features
 
@@ -58,8 +56,6 @@ The desktop components are three standard DSH bundles:
 App companion and Bridge share this repository and ship as separate `.tgz` packages. The native App is a separate phone client. Disabling the companion removes its pairing interface while Bridge and approved phones can continue working. Web uses host browser authentication and does not require App or Bridge. See [plugin responsibilities](docs/plugins.md).
 
 Bridge waits for owner configuration. Configure dedicated storage and HTTPS, then approve pairing on the computer. Message caches and drafts live on the client; device credentials use the platform's secure store.
-
-![App device management in unified phone access, with a synthetic test device](docs/images/phone-access-app.png)
 
 ## Development status
 

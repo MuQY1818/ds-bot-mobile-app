@@ -8,7 +8,15 @@
 - 输入：独立加号和胶囊输入框，最小触控 44px；保留 safe area、原生键盘避让、滚动恢复和返回手势。
 - 暗色主题保持消息归属的对比；减弱动画设置继续生效。实际可用功能以主机能力为准。
 
-ChatHeader 和 MessageBubble 在实际 App 与设计预览之间共享。预览用于检查布局、搜索、导航和输入，使用虚构内容；不连接主机、不保存设备凭据，也不伪造真实模型回复。
+## 原生组件的示例数据预览
+
+ChatHeader 和 MessageBubble 在实际 App 与设计预览之间共享。以下是实际 React Native 组件在 Web 中渲染的会话列表、单聊与群聊，使用**示例数据**。预览用于检查布局、搜索、导航和输入；不连接主机、不保存设备凭据，不表示用户实际会话或模型输出。
+
+<p align="center">
+  <img src="images/conversations.png" width="230" alt="示例数据：原生组件会话列表的 Web 渲染">
+  <img src="images/chat.png" width="230" alt="示例数据：原生组件单聊的 Web 渲染">
+  <img src="images/group.png" width="230" alt="示例数据：原生组件群聊的 Web 渲染">
+</p>
 
 ```sh
 cd apps/mobile
@@ -22,3 +30,5 @@ EXPO_PUBLIC_DS_BOT_DESIGN_PREVIEW=1 npx expo start --web --host localhost --port
 账户菜单只显示一个“手机访问”，500px 紧凑弹窗中用 Web / App 标签切换。标题与关闭按钮属于共享壳，连接状态位于内容区，不进入宿主设置工具栏。App 内容使用分隔线和设备行；没有待批准请求时不显示空卡片，配对说明按需展开。Web 内容保留扫码和复制登录链接。
 
 两插件分别提供模式，任一独立启用仍可使用。切换模式与关闭弹窗卸载内容并取消本模式请求、清理二维码。保留键盘 tabs、Esc、焦点约束与返回焦点，窄屏及短横屏内容独立滚动。
+
+README 主图来自实际部署的电脑端 App 配套插件，裁剪至“手机访问 → App”弹窗；截图时没有显示配对二维码。它与上方使用示例数据的原生组件预览来源不同，也不代表原生 App 的真机验收。来源与隐私处理见[图片说明](images/README.md)。

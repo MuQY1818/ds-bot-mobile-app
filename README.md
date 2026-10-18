@@ -19,12 +19,10 @@ DS Bot Mobile App 为自托管 [DeepSeek Harness](https://github.com/deepseek-ai
 ## 界面预览
 
 <p align="center">
-  <img src="docs/images/conversations.png" width="230" alt="会话列表示例">
-  <img src="docs/images/chat.png" width="230" alt="单聊界面示例">
-  <img src="docs/images/group.png" width="230" alt="带成员署名的群聊界面示例">
+  <img src="docs/images/phone-access-app.png" width="500" alt="实际运行的电脑端手机访问 App 标签，显示连接服务与已授权设备">
 </p>
 
-*会话列表、单聊与群聊。图片采用虚构数据，由实际 React Native 组件在 Web 渲染；属于设计预览。设计说明见 [docs/design.md](docs/design.md)。*
+*实际部署的电脑端配套插件：在“手机访问 → App”中查看连接服务与已授权设备。本图裁剪至弹窗，未生成或展示配对二维码；不包含设备标识或访问凭据。这是电脑端界面，原生客户端的示例数据预览见[设计说明](docs/design.md)，不作为手机真机截图。*
 
 ## 主要功能
 
@@ -58,8 +56,6 @@ flowchart LR
 App 配套插件和 Bridge 在本仓库维护，发布为两个独立 `.tgz`。原生 App 是手机上的独立客户端。停用 App 配套插件会移除配对界面；Bridge 与已授权手机可以继续工作。Web 使用宿主的浏览器认证，无需安装 App 或 Bridge。架构和生命周期见[插件职责](docs/plugins.md)。
 
 Bridge 默认等待所有者配置。配置独立状态目录与 HTTPS 后，由电脑批准手机配对。消息缓存与草稿保存在客户端；设备凭据使用平台安全存储。
-
-![统一手机访问中的 App 设备管理，使用隔离合成设备](docs/images/phone-access-app.png)
 
 ## 开发状态
 
