@@ -2,6 +2,8 @@
 
 The independently managed DSH device-authentication and text-transport plugin for the native App. Current version: **0.0.6**. [中文](README.zh.md)
 
+This directory is the retained `0.0.6` compatibility snapshot within the App repository. The [independent Mobile Bridge repository](https://github.com/MuQY1818/ds-bot-mobile-bridge) is the entry point for ongoing Bridge maintenance and releases; this snapshot remains for App builds, tests and historical delivery reproduction.
+
 For phone browser access, use [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web); this package is not required.
 
 ## Setup

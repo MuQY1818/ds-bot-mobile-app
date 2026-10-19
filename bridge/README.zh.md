@@ -2,6 +2,8 @@
 
 原生 App 的独立 DSH 设备认证与文字传输插件，当前版本 **0.0.6**。[English](README.md)
 
+本目录是 App 仓库保留的 `0.0.6` 兼容快照。Bridge 后续维护与发布入口为[独立 Mobile Bridge 仓库](https://github.com/MuQY1818/ds-bot-mobile-bridge)；本地快照继续用于 App 构建、测试和历史交付复现。
+
 仅使用手机浏览器时，请选择 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)，无需安装此包。
 
 ## 安装与配置

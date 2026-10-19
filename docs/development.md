@@ -14,13 +14,17 @@ npm run pack:companion
 npm --prefix companion run test:delivery -- ../artifacts/ds-bot-mobile-app-0.2.0.tgz
 ```
 
-最后一条路径相对于 bridge/。test:prepare 从公开 npm 下载固定 DSH 0.2.1-rc.2 和 DS Bot 0.1.7，只给 ignored fixture 内的副本应用审查补丁；保留原版拒绝测试。不接触用户 profile。动态端口与 HOME/DSH_HOME 相互隔离，测试结束清理子进程。
+两条 `test:delivery` 中的 `../artifacts/` 路径分别相对于对应的 `bridge/` 和 `companion/` 子包。test:prepare 从公开 npm 下载固定 DSH 0.2.1-rc.2 和 DS Bot 0.1.7，只给 ignored fixture 内的副本应用审查补丁；保留原版拒绝测试。不接触用户 profile。动态端口与 HOME/DSH_HOME 相互隔离，测试结束清理子进程。
 
 BRIDGE_TEST_BOT 可指定另一份已经审查的 DS Bot 源码，BRIDGE_TEST_DEPS 可复用公开测试依赖目录。生产验证与 fixture 分开记录，不能把 mock 通过视作真机验收。
 
 App 测试自带 esbuild，不依赖另一个 DS Bot 仓库的 node_modules。Android 签名脚本只接受你自己提供的 ANDROID_KEYSTORE_PATH、ANDROID_KEY_ALIAS、ANDROID_KEYSTORE_PASSWORD 和 ANDROID_SIGNING_CERT_SHA256。不含任何签名密钥或证书。
 
 npm run pack:bridge 要求干净 Git 工作树，按明确文件白名单打包，记录对应源码提交与发布信息。每次版本修改必须更新 bridge/package.json 与 lock，保留旧 tag/制品。
+
+## Bridge 快照与独立仓库
+
+Bridge 后续维护从[独立仓库](https://github.com/MuQY1818/ds-bot-mobile-bridge)进入。本仓库 `bridge/` 保留 `0.0.6` 兼容快照，当前 CI 和客户端契约测试仍使用它；不要删除或未经核对替换。本地快照与独立仓库不会自动同步，涉及客户端契约或兼容修复时，应明确记录来源、版本和对应验证。
 
 ## App 电脑端插件
 

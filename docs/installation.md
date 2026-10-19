@@ -1,6 +1,6 @@
 # 安装与配对
 
-原生 App 当前是源码预览，尚无可直接安装的 IPA/APK。希望不构建客户端直接在手机使用，请选择 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。
+原生 App 当前是 `0.1.7-preview.1` 源码预览，客户端版本 `0.1.7`，尚无可直接安装的 IPA/APK。希望不构建客户端直接在手机使用，请选择 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。[文档首页](README.md)提供其他指南入口。
 
 ## 开始前
 
@@ -10,13 +10,13 @@
 
 ## 第一步：准备电脑端
 
-从[发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases)选择以下插件包，在日常使用的 DSH 插件管理器分别安装：
+使用下列明确版本的插件包，在日常使用的 DSH 插件管理器分别安装。App 配套插件与兼容 DS Bot 包位于 [App `v0.1.7-preview.1` 发布](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.1)，Bridge 的独立发布入口为 [`v0.0.6`](https://github.com/MuQY1818/ds-bot-mobile-bridge/releases/tag/v0.0.6)：
 
 | 文件 | 作用 |
 | --- | --- |
-| `ds-bot-mobile-bridge-0.0.6.tgz` | 设备认证与消息传输 |
-| `ds-bot-mobile-app-0.2.0.tgz` | 电脑上的配对与设备管理界面 |
-| `ds-bot-0.1.7-codex.1.tgz` | 缺少 Bridge 接口时使用的兼容 DS Bot 包 |
+| [`ds-bot-mobile-bridge-0.0.6.tgz`](https://github.com/MuQY1818/ds-bot-mobile-bridge/releases/download/v0.0.6/ds-bot-mobile-bridge-0.0.6.tgz) | 设备认证与消息传输 |
+| [`ds-bot-mobile-app-0.2.0.tgz`](https://github.com/MuQY1818/ds-bot-mobile-app/releases/download/v0.1.7-preview.1/ds-bot-mobile-app-0.2.0.tgz) | 电脑上的配对与设备管理界面 |
+| [`ds-bot-0.1.7-codex.1.tgz`](https://github.com/MuQY1818/ds-bot-mobile-app/releases/download/v0.1.7-preview.1/ds-bot-0.1.7-codex.1.tgz) | 缺少 Bridge 接口时使用的兼容 DS Bot 包 |
 
 Bridge 需要 `bridge.describe`、稳定 `bridge.submit` 和 `bridge.redact`。原版 npm DS Bot `0.1.7` 不满足；已有提供这些接口的版本无需另换。等现有任务空闲后更新宿主，保留团队目录和旧包。
 
@@ -34,7 +34,7 @@ npm --prefix apps/mobile run ios
 # Android 改为 npm --prefix apps/mobile run android
 ```
 
-项目含自定义原生模块，使用完整开发构建；Expo Go 不具备完整运行环境。详细平台要求见[客户端构建说明](../apps/mobile/README.md)。
+项目含自定义原生模块，使用完整开发构建；Expo Go 不具备完整运行环境。上述脚本调用 `expo run:ios` / `expo run:android`，本地构建并安装开发客户端；首次构建前必须准备对应平台工具链。详细要求及 Expo 官方参考见[客户端构建说明](../apps/mobile/README.md)。提供 Android 构建入口不代表已经完成 Android 真机验收，当前范围见[状态页](status.md)。
 
 更新已经安装的个人版本时，沿用应用标识、签名身份和 Keychain 权限，保留本地数据。不要通过先卸载清数据来处理一般升级。
 

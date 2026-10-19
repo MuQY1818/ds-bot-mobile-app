@@ -8,12 +8,12 @@ DS Bot 的移动访问分为三个独立的电脑端插件。它们使用 DSH �
 | --- | --- | --- | --- |
 | Mobile Web | `ds-bot-mobile-web`，[独立仓库](https://github.com/MuQY1818/ds-bot-mobile-web) | 手机浏览器界面、手机访问入口和浏览器会话体验 | 已有 DSH Web / DS Bot |
 | Mobile App 电脑端配套 | `ds-bot-mobile-app`，[companion](../companion/README.md) | Bridge 状态、配对二维码、批准/拒绝请求、设备撤销 | 已配置的 Mobile Bridge |
-| Mobile Bridge | `ds-bot-mobile-bridge`，[bridge](../bridge/README.zh.md) | 设备认证、HTTP/WS、能力适配与独立授权存储 | 兼容 DS Bot 窄接口 |
+| Mobile Bridge | `ds-bot-mobile-bridge`，[独立仓库](https://github.com/MuQY1818/ds-bot-mobile-bridge) | 设备认证、HTTP/WS、能力适配与独立授权存储 | 兼容 DS Bot 窄接口 |
 | 原生 App | [apps/mobile](../apps/mobile/README.md) | iOS / Android 页面、安全凭据存储、消息缓存与草稿 | 手机可达的 Bridge HTTPS 入口 |
 
-App 配套插件和 Bridge 在同一源码仓库维护，分别发布 `.tgz`。它们各自的版本与许可证清单写入包内 `package.json`；原生 App 的版本写入 `apps/mobile/app.json`。共享仓库不会将它们变成一个必须一起启停的插件。
+App 配套插件在本仓库的 `companion/` 维护；Bridge 已有[独立仓库](https://github.com/MuQY1818/ds-bot-mobile-bridge)，分别发布 `.tgz`。本仓库 `bridge/` 继续保留 `0.0.6` 兼容快照，供现有构建、测试和历史交付复现，不因拆分仓库删除。它们各自的版本与许可证清单写入包内 `package.json`；原生 App 的版本写入 `apps/mobile/app.json`。
 
-App 配套插件 `0.2.0` 和 Mobile Web `0.4.0` 共用账户菜单中的 **手机访问** 入口。双启用时弹窗显示 **Web / App** 标签；只启用其中一个时仅显示对应方式。两个包保留独立版本、配置、认证接口和生命周期，Bridge 继续作为第三个插件。官方 `plugins.bundle.config` 页面提供打开同一弹窗的备用按钮。旧 `0.1.1` 的“移动设备”设置页被统一弹窗取代。
+App 配套插件 `0.2.0` 与支持共享入口的 Mobile Web 共用账户菜单中的 **手机访问** 入口。双启用时弹窗显示 **Web / App** 标签；只启用其中一个时仅显示对应方式。两个包保留独立版本、配置、认证接口和生命周期，Bridge 继续作为第三个插件。官方 `plugins.bundle.config` 页面提供打开同一弹窗的备用按钮。旧 `0.1.1` 的“移动设备”设置页被统一弹窗取代。
 
 ## 访问链路
 
@@ -46,9 +46,9 @@ Web 使用宿主浏览器认证，App 使用单独批准的设备身份。两种
 
 ## English
 
-The three desktop bundles are independently installable: **Mobile Web** supplies the browser interface, **Mobile App** supplies desktop pairing/device management, and **Mobile Bridge** supplies device authentication and transport. The native iOS / Android App remains a separate client. App companion and Bridge share a source repository but have separate package manifests, versions and archives.
+The three desktop bundles are independently installable: **Mobile Web** supplies the browser interface, **Mobile App** supplies desktop pairing/device management, and **Mobile Bridge** supplies device authentication and transport. The native iOS / Android App remains a separate client. The App companion is maintained here; Bridge now has its [own repository](https://github.com/MuQY1818/ds-bot-mobile-bridge). The local `bridge/` directory remains a `0.0.6` compatibility snapshot for current builds, tests and historical delivery reproduction. Package manifests, versions and archives remain independent.
 
-Companion `0.2.0` and Mobile Web `0.4.0` share **Phone access** in the account menu. Both enabled: **Web / App** tabs. Either enabled alone: its own mode remains available. Packages, versions, configuration and authentication remain independent; Bridge stays a separate transport bundle. The official bundle configuration opens the same dialog. The previous standalone Mobile devices settings page is replaced by this compact flow.
+Companion `0.2.0` and a compatible Mobile Web share **Phone access** in the account menu. Both enabled: **Web / App** tabs. Either enabled alone: its own mode remains available. Packages, versions, configuration and authentication remain independent; Bridge stays a separate transport bundle. The official bundle configuration opens the same dialog. The previous standalone Mobile devices settings page is replaced by this compact flow.
 
 Web uses host browser authentication and requires neither App nor Bridge. The native App uses owner-approved device credentials and does not require Mobile Web. Disabling or removing App companion cleans up its UI without owning the Bridge listener or deleting authorization state. Disabling Bridge stops transport; re-enabling with the same dedicated state directory retains the host identity and authorized devices. Revocation is an explicit owner action. Hiding a QR code clears only its display; unused codes expire after two minutes and a new code replaces earlier unused codes.
 

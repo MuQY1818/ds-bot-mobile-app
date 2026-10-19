@@ -1,11 +1,11 @@
 # DS Bot Mobile App · Desktop companion
 
-The computer-side pairing and device-management interface for the native App. Current version: **0.2.0**. Authentication and transport belong to the separate Mobile Bridge plugin.
+The computer-side pairing and device-management interface for the native App. Current version: **0.2.0**. Authentication and transport belong to the separate [Mobile Bridge plugin](https://github.com/MuQY1818/ds-bot-mobile-bridge).
 
 ## Start
 
 1. Prepare compatible DS Bot and Mobile Bridge with a phone-accessible HTTPS endpoint.
-2. Install and enable `ds-bot-mobile-app-0.2.0.tgz` through the DSH plugin manager.
+2. Install and enable [`ds-bot-mobile-app-0.2.0.tgz`](https://github.com/MuQY1818/ds-bot-mobile-app/releases/download/v0.1.7-preview.1/ds-bot-mobile-app-0.2.0.tgz) through the DSH plugin manager.
 3. Open **Phone access → App**, generate a pairing QR, scan with the native client and approve the matching request on the computer.
 
 The official bundle configuration can open the same dialog. With compatible Mobile Web installed, the dialog contains **Web / App** tabs; either interface also works alone. Browser sign-in QR codes cannot pair the native App.

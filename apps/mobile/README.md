@@ -2,7 +2,7 @@
 
 The Expo / React Native client for [DS Bot Mobile App](../../README.en.md), targeting iOS and Android. The current source uses Expo SDK 54, React Native 0.81.5 and React 19.1.
 
-[中文项目说明](../../README.md) · [Installation](../../docs/installation.md) · [Development](../../docs/development.md) · [Compatibility](../../docs/validation.md)
+[中文项目说明](../../README.md) · [Documentation](../../docs/README.md) · [Installation](../../docs/installation.md) · [Development](../../docs/development.md) · [Compatibility](../../docs/validation.md)
 
 ## Requirements
 
@@ -37,7 +37,7 @@ npm run ios
 npm run android
 ```
 
-These scripts invoke `expo run:ios` / `expo run:android`. After installing the development client, `npm start` starts Metro for it. Use your own signing configuration for device builds. The public source defaults to `app.dsbot.mobile`; an update to an existing installation must retain its bundle identifier, signing identity and Keychain access. See [installation](../../docs/installation.md).
+These scripts invoke `expo run:ios` / `expo run:android`, generate native projects when needed and install a development build. Changes to native modules require rebuilding that client; restarting Metro alone does not add native code. See the official Expo guides on [development builds](https://docs.expo.dev/develop/development-builds/introduction/) and [local compilation](https://docs.expo.dev/guides/local-app-development/). After installing the development client, `npm start` starts Metro for it. Use your own signing configuration for device builds. The public source defaults to `app.dsbot.mobile`; an update to an existing installation must retain its bundle identifier, signing identity and Keychain access. See [installation](../../docs/installation.md).
 
 ## Design preview
 
