@@ -1,5 +1,7 @@
 <div align="center">
 
+<p><img src="docs/images/whale-mark.png" width="360" alt="DS Bot Mobile App whale and phone mark"></p>
+
 <h1>DS Bot Mobile App</h1>
 <p>Connect to your existing Bot team from your phone, keep drafts close, and manage access per device.</p>
 

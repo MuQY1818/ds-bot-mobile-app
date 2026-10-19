@@ -1,5 +1,7 @@
 <div align="center">
 
+<p><img src="docs/images/whale-mark.png" width="360" alt="DS Bot Mobile App 小鲸鱼与手机标识"></p>
+
 <h1>DS Bot Mobile App</h1>
 <p>在手机上连接已有 Bot 团队，阅读会话、继续草稿，并按设备管理访问权限。</p>
 
