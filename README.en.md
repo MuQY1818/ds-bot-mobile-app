@@ -17,7 +17,7 @@
 
 ## A native interface for an existing team
 
-Connect to DS Bot already running on your computer, with your existing Bots, groups and conversations. The phone handles native navigation, reading and drafts. The desktop companion handles pairing approval and device management; the independent Bridge handles authentication and transport.
+Connect to DS Bot already running in [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) on your computer, with your existing Bots, groups and conversations. The phone handles native navigation, reading and drafts. The desktop companion handles pairing approval and device management; the independent Bridge handles authentication and transport.
 
 | Conversations | Direct messages | Group chat |
 | :---: | :---: | :---: |
