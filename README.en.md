@@ -6,7 +6,7 @@ An iOS / Android source preview for your existing Bot team.
 
 **For direct phone access, start with [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web).** Web is the primary access path and requires no native build. This repository is for developers who want a native client and can prepare the platform toolchain.
 
-The current source preview is **0.1.5-preview.1**: native App **0.1.5**, desktop companion **0.2.0**, Mobile Bridge **0.0.6**. Ready-to-install IPA/APK files are not provided. Selection handles remain experimental and are not part of this preview.
+The current source preview is **0.1.6-preview.1**: native App **0.1.6**, desktop companion **0.2.0**, Mobile Bridge **0.0.6**. Ready-to-install IPA/APK files are not provided. This revision includes an iOS text-selection candidate; see [status](docs/status.md) for validation and installation status.
 
 ## Preview
 

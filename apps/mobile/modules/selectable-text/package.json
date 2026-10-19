@@ -1,0 +1,9 @@
+{
+  "name": "@ds-bot/selectable-text",
+  "version": "0.1.0",
+  "description": "Native iOS text selection for read-only DS Bot message paragraphs",
+  "private": true,
+  "license": "Apache-2.0",
+  "author": "DS Bot contributors",
+  "homepage": "https://github.com/MuQY1818/ds-bot-mobile-app"
+}

@@ -11,6 +11,7 @@ import * as Sharing from "expo-sharing";
 import { Attachment, Message, MobileClient } from "@ds-bot/mobile-sdk";
 import { Button, Icon, Notice, Sheet } from "./UI";
 import { MarkdownText } from "./MarkdownText";
+import { clearMessageSelection } from "./SelectableText";
 import { BotAvatar } from "./BotAvatar";
 import { MessageActions, MessageAction, REACTIONS } from "./MessageActions";
 import { useTheme } from "../theme";
@@ -109,7 +110,7 @@ export function MessageBubble({ capabilities, message, client, conversationId, s
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => {clearTimeout(dismissTimer.current);systemTask.current=null;if(reading.current) void Speech.stop();}, []);
   useEffect(() => {if(!copied)return;const timer=setTimeout(()=>setCopied(false),2000);return()=>clearTimeout(timer);},[copied]);
-  function openActions(){Keyboard.dismiss();setError("");setCopied(false);setMenu(true);}
+  function openActions(){void clearMessageSelection();Keyboard.dismiss();setError("");setCopied(false);setMenu(true);}
   function runSystemAction(){
     clearTimeout(dismissTimer.current);
     const action=systemTask.current;systemTask.current=null;
@@ -171,14 +172,15 @@ export function MessageBubble({ capabilities, message, client, conversationId, s
     {mine && message.delivery ? <Text accessibilityLiveRegion="polite" style={{ color: message.delivery === "rejected" ? t.error : t.muted, fontSize: 11, alignSelf: "flex-end", marginRight: 8 }}>{tr(message.delivery === "sending" ? "Sending…" : message.delivery === "rejected" ? "Not sent" : "Awaiting confirmation")}</Text> : null}
     {!!message.text || !!message.attachments?.length || (message.pending && !message.reasoning) ? <View style={{ flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end", gap: 8, justifyContent: "flex-start" }}>
       {showAuthor && !mine && bot ? <Pressable disabled={!onOpenBot} onPress={() => onOpenBot?.(bot.id)} accessibilityRole="button" accessibilityLabel={tr("Open ") + author + tr("'s chat")} hitSlop={8} style={{minHeight:44,width:28,justifyContent:"flex-end",paddingBottom:6}}><BotAvatar bot={bot} size={24}/></Pressable> : null}
-      <Pressable accessible={false} onLongPress={() => !message.pending && openActions()} delayLongPress={350} style={{ maxWidth: mine ? "88%" : showAuthor ? "86%" : "94%", flexShrink: 1, backgroundColor: mine ? t.messageBubble : t.bubble, borderRadius: 26, paddingHorizontal: 18, paddingVertical: 13, gap: 10 }}>
-        {!!message.text ? <MarkdownText onLongPress={!message.pending ? () => openActions() : undefined} fontSize={17} text={message.text} bots={bots} selfId={mine ? undefined : bot?.id} color={mine ? t.messageText : t.ink} onLink={url => {
+      <View style={{ maxWidth: mine ? "88%" : showAuthor ? "86%" : "94%", flexShrink: 1, backgroundColor: mine ? t.messageBubble : t.bubble, borderRadius: 26, paddingHorizontal: 18, paddingVertical: 13, gap: 10 }}>
+        {!!message.text ? <MarkdownText fontSize={17} text={message.text} bots={bots} selfId={mine ? undefined : bot?.id} color={mine ? t.messageText : t.ink} onLink={url => {
           if (!url.startsWith("https://bots.local/")) return false;
           try { const id = decodeURIComponent(url.slice("https://bots.local/".length)); if (bots?.some(item => item.id === id)) onOpenBot?.(id); } catch {}
           return true;
         }} /> : message.pending && !message.reasoning ? <Text style={{ color: t.muted, fontSize: 13 }}>{tr("Thinking…")}</Text> : null}
         {message.attachments?.map((attachment, index) => message.localSubmission ? <Text key={attachment.receiptId || index} style={{color:mine ? t.messageText : t.muted}}>{attachment.name}</Text> : !(Array.isArray(capabilities?.attachmentDownloads) && capabilities.attachmentDownloads.includes(attachment.type)) ? <View key={attachment.id || index}><Text style={{color:t.muted}}>{attachment.name}</Text><Notice text="当前电脑桥接暂不支持附件预览或下载。"/></View> : attachment.type === "image" ? <ImageAttachment key={attachment.id || index} attachment={attachment} message={message} client={client} conversationId={conversationId} /> : <FileAttachment key={attachment.id || index} attachment={attachment} message={message} client={client} conversationId={conversationId} color={mine ? t.messageText : undefined} />)}
-      </Pressable>
+      </View>
+      {!message.pending ? <Pressable accessibilityRole="button" accessibilityLabel={tr("Message actions")} onPress={openActions} style={{ width: 44, minHeight: 44, alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="more" size={18} color={t.muted}/></Pressable> : null}
 
     </View> : null}
     {message.interrupted ? <Text style={{ color: t.muted, fontSize: 12, marginLeft: 0 }}>{tr("Stopped")}</Text> : null}
