@@ -5,10 +5,12 @@ import { AnimatedPressable as Pressable } from "./Motion";
 import * as Clipboard from "expo-clipboard";
 import { markdownNodes, MarkdownNode, safeLink, MentionBot } from "../logic/markdown";
 import { useTheme } from "../theme";
+import { selectionRuns } from "../logic/selection-runs";
+import { SelectableText } from "./SelectableText";
 
 const mono = Platform.OS === "ios" ? "Menlo" : "monospace";
 
-function CodeBlock({ node, onLongPress }: { node: MarkdownNode; onLongPress?: () => void }) {
+function CodeBlock({ node }: { node: MarkdownNode }) {
   const t = useTheme();
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -23,16 +25,15 @@ function CodeBlock({ node, onLongPress }: { node: MarkdownNode; onLongPress?: ()
       </Pressable>
     </View>
     <ScrollView horizontal contentContainerStyle={{ padding: 12 }}>
-      <Text selectable={!onLongPress} onLongPress={onLongPress} style={{ color: t.ink, fontSize: 13, lineHeight: 20, fontFamily: mono }}>{node.text.replace(/\n$/, "")}</Text>
+      <SelectableText runs={[{ text: node.text.replace(/\n$/, ""), color: t.ink, fontSize: 13, fontFamily: mono }]} style={{ color: t.ink, fontSize: 13, lineHeight: 20, fontFamily: mono }} selectionColor={t.accent} onLink={() => {}}>{node.text.replace(/\n$/, "")}</SelectableText>
     </ScrollView>
   </View>;
 }
 
-export function MarkdownText({ text, color, onLink, onLongPress, fontSize = 14, bots, selfId }: {
+export function MarkdownText({ text, color, onLink, fontSize = 14, bots, selfId }: {
   text: string;
   color?: string;
   onLink?: (url: string) => boolean;
-  onLongPress?: () => void;
   fontSize?: number;
   bots?: MentionBot[];
   selfId?: string;
@@ -63,14 +64,19 @@ export function MarkdownText({ text, color, onLink, onLongPress, fontSize = 14, 
       return <Text key={key}>{children}</Text>;
     });
   }
+  function selectable(items: MarkdownNode[], key: string, style: TextStyle = body, heading = false) {
+    const runs = selectionRuns(items, { color: ink, fontSize: Number(style.fontSize ?? fontSize), fontWeight: style.fontWeight ? String(style.fontWeight) : undefined },
+      { linkColor: color === t.userText ? color : t.link, codeColor: t.line, mono, imageLabel: tr("Open image") });
+    return <SelectableText key={key} runs={runs} style={style} heading={heading} selectionColor={t.accent} onLink={value => void open(value)}>{inline(items, key)}</SelectableText>;
+  }
   function render(items: MarkdownNode[], prefix = "md"): React.ReactNode[] {
     return items.map((node, index) => {
       const key = `${prefix}:${index}`;
-      if (node.type === "inline") return <Text key={key} selectable={!onLongPress} onLongPress={onLongPress} style={body}>{inline(node.children, key)}</Text>;
-      if (node.type === "fence" || node.type === "code_block") return <CodeBlock key={key} node={node} onLongPress={onLongPress} />;
+      if (node.type === "inline") return selectable(node.children, key);
+      if (node.type === "fence" || node.type === "code_block") return <CodeBlock key={key} node={node} />;
       if (node.type === "heading") {
         const size = Math.max(fontSize + 1, 25 - Number(node.tag.slice(1)) * 2);
-        return <Text key={key} accessibilityRole="header" selectable={!onLongPress} onLongPress={onLongPress} style={{ ...body, fontSize: size, lineHeight: size + 8, fontWeight: "700", marginTop: 4 }}>{node.children.flatMap(child => inline(child.children, key))}</Text>;
+        return selectable(node.children, key, { ...body, fontSize: size, lineHeight: size + 8, fontWeight: "700", marginTop: 4 }, true);
       }
       if (node.type === "bullet_list" || node.type === "ordered_list") {
         const start = Number(node.attrs.start || 1);
@@ -83,9 +89,9 @@ export function MarkdownText({ text, color, onLink, onLongPress, fontSize = 14, 
       if (node.type === "hr") return <View key={key} accessible={false} style={{ height: 1, backgroundColor: t.line, marginVertical: 5 }} />;
       if (node.type === "table") {
         const rows = node.children.flatMap(section => section.children);
-        return <ScrollView key={key} horizontal><View style={{ borderWidth: 1, borderColor: t.line, borderRadius: 7, overflow: "hidden" }}>{rows.map((row, rowIndex) => <View key={rowIndex} style={{ flexDirection: "row", borderBottomWidth: rowIndex === rows.length - 1 ? 0 : 1, borderColor: t.line }}>{row.children.map((cell, col) => <View key={col} style={{ width: 148, padding: 10, backgroundColor: cell.type === "th" ? t.line : undefined, borderLeftWidth: col ? 1 : 0, borderColor: t.line }}><Text selectable={!onLongPress} onLongPress={onLongPress} style={{ ...body, fontWeight: cell.type === "th" ? "600" : "400" }}>{cell.children.flatMap(child => inline(child.children, `${key}:${rowIndex}:${col}`))}</Text></View>)}</View>)}</View></ScrollView>;
+        return <ScrollView key={key} horizontal><View style={{ borderWidth: 1, borderColor: t.line, borderRadius: 7, overflow: "hidden" }}>{rows.map((row, rowIndex) => <View key={rowIndex} style={{ flexDirection: "row", borderBottomWidth: rowIndex === rows.length - 1 ? 0 : 1, borderColor: t.line }}>{row.children.map((cell, col) => <View key={col} style={{ width: 148, padding: 10, backgroundColor: cell.type === "th" ? t.line : undefined, borderLeftWidth: col ? 1 : 0, borderColor: t.line }}>{selectable(cell.children, `${key}:${rowIndex}:${col}`, { ...body, fontWeight: cell.type === "th" ? "600" : "400" })}</View>)}</View>)}</View></ScrollView>;
       }
-      return <View key={key} style={{ gap: 7 }}>{node.children.length ? render(node.children, key) : <Text selectable={!onLongPress} onLongPress={onLongPress} style={body}>{node.text}</Text>}</View>;
+      return <View key={key} style={{ gap: 7 }}>{node.children.length ? render(node.children, key) : <SelectableText runs={[{ text: node.text, color: ink, fontSize }]} style={body} selectionColor={t.accent} onLink={value => void open(value)}>{node.text}</SelectableText>}</View>;
     });
   }
   return <View style={{ gap: 8 }}>{render(nodes)}{linkError ? <Text accessibilityRole="alert" style={{ color: t.error, fontSize: 12 }}>{tr(linkError)}</Text> : null}</View>;

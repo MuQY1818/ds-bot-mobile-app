@@ -13,6 +13,7 @@ const zh: Record<string, string> = {
   "Back to conversations": "返回对话列表",
   "Back to bottom": "回到底部",
   "New messages": "有新消息",
+  "Message actions": "消息操作",
   "Too many active conversations. Close another conversation first.": "当前打开的对话过多，请先关闭一个对话。",
   "Sending…": "正在发送…",
   "Not sent": "未发送",

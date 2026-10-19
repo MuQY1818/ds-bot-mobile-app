@@ -409,6 +409,9 @@ test('a failed claim preserves the original durable send and stops before target
   const f = await fixture();
   try {
     await f.until(() => f.current().status === 'reconnecting');
+    // Start this local-claim scenario after the initial REST snapshot has been
+    // applied; a WS status alone does not mean that independent read has ended.
+    await f.until(() => f.streams.peek(f.client, 'fixture', 'bot:a')?.snapshot.cursor === null);
     const original = { requestId: 'another-hook', conversationId: 'bot:a', text: 'Existing durable original', attachments: [], createdAt: 1, delivery: 'unconfirmed' };
     f.values.set('fixture:outgoing:bot:a', original); f.edit('My unsent text');
     assert.equal(await f.tap(), false); await f.flush();

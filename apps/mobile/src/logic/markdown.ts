@@ -1,7 +1,11 @@
 import MarkdownIt from "markdown-it";
+import cjkFriendly from "markdown-it-cjk-friendly";
 import { mentionSpans } from "@ds-bot/mobile-sdk";
 
-const parser = new MarkdownIt({ html: false, linkify: true, breaks: true });
+// CJK punctuation can sit directly inside emphasis next to ordinary text.
+// Extend delimiter scanning instead of rewriting the source, so escaped marks,
+// code spans, nested formatting and incomplete streamed text stay intact.
+const parser = new MarkdownIt({ html: false, linkify: true, breaks: true }).use(cjkFriendly);
 
 export interface MarkdownNode {
   type: string;

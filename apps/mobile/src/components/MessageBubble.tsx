@@ -11,6 +11,7 @@ import * as Sharing from "expo-sharing";
 import { Attachment, Message, MobileClient } from "@ds-bot/mobile-sdk";
 import { Button, Icon, Notice, Sheet } from "./UI";
 import { MarkdownText } from "./MarkdownText";
+import { clearMessageSelection } from "./SelectableText";
 import { BotAvatar } from "./BotAvatar";
 import { MessageActions, MessageAction, REACTIONS } from "./MessageActions";
 import { useTheme } from "../theme";
@@ -109,7 +110,11 @@ export function MessageBubble({ capabilities, message, client, conversationId, s
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => {clearTimeout(dismissTimer.current);systemTask.current=null;if(reading.current) void Speech.stop();}, []);
   useEffect(() => {if(!copied)return;const timer=setTimeout(()=>setCopied(false),2000);return()=>clearTimeout(timer);},[copied]);
-  function openActions(){Keyboard.dismiss();setError("");setCopied(false);setMenu(true);}
+  function openActions(){void clearMessageSelection();Keyboard.dismiss();setError("");setCopied(false);setMenu(true);}
+  function copyMessage(){
+    void clearMessageSelection();
+    void Clipboard.setStringAsync(message.text).then(()=>{setMenu(false);setCopied(true);}).catch(err=>setError(errorText(err)));
+  }
   function runSystemAction(){
     clearTimeout(dismissTimer.current);
     const action=systemTask.current;systemTask.current=null;
@@ -125,7 +130,7 @@ export function MessageBubble({ capabilities, message, client, conversationId, s
   const hasText=!!message.text.trim();
   const actions:MessageAction[]=[
     ...(onReply?[{label:tr("Reply"),icon:"reply" as const,disabled:!hasText,onPress:()=>{setMenu(false);onReply(message.text);}}]:[]),
-    {label:tr("Copy"),icon:"copy",disabled:!hasText,onPress:()=>{void Clipboard.setStringAsync(message.text).then(()=>{setMenu(false);setCopied(true);}).catch(err=>setError(errorText(err)));}},
+    {label:tr("Copy"),icon:"copy",disabled:!hasText,onPress:copyMessage},
     {label:tr("Share"),icon:"share",disabled:!hasText,onPress:()=>{void systemAction(()=>Share.share({message:message.text}));}},
     {label:tr("Download"),icon:"download",disabled:!hasText,onPress:()=>{void systemAction(()=>saveFile(author+"-message.md",message.text,"text/markdown"));}},
     ...(!mine?[{label:tr(speaking?"Stop reading":"Read aloud"),icon:"speaker" as const,disabled:!hasText,onPress:()=>{setMenu(false);void Speech.stop().then(()=>{if(speaking){reading.current=false;setSpeaking(false);return;}reading.current=true;setSpeaking(true);Speech.speak(message.text,{onDone:()=>{reading.current=false;setSpeaking(false);},onStopped:()=>{reading.current=false;setSpeaking(false);},onError:()=>{reading.current=false;setSpeaking(false);setError("Text-to-speech is unavailable on this device.");}});}).catch(err=>setError(errorText(err)));}}]:[]),
@@ -171,22 +176,25 @@ export function MessageBubble({ capabilities, message, client, conversationId, s
     {mine && message.delivery ? <Text accessibilityLiveRegion="polite" style={{ color: message.delivery === "rejected" ? t.error : t.muted, fontSize: 11, alignSelf: "flex-end", marginRight: 8 }}>{tr(message.delivery === "sending" ? "Sending…" : message.delivery === "rejected" ? "Not sent" : "Awaiting confirmation")}</Text> : null}
     {!!message.text || !!message.attachments?.length || (message.pending && !message.reasoning) ? <View style={{ flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end", gap: 8, justifyContent: "flex-start" }}>
       {showAuthor && !mine && bot ? <Pressable disabled={!onOpenBot} onPress={() => onOpenBot?.(bot.id)} accessibilityRole="button" accessibilityLabel={tr("Open ") + author + tr("'s chat")} hitSlop={8} style={{minHeight:44,width:28,justifyContent:"flex-end",paddingBottom:6}}><BotAvatar bot={bot} size={24}/></Pressable> : null}
-      <Pressable accessible={false} onLongPress={() => !message.pending && openActions()} delayLongPress={350} style={{ maxWidth: mine ? "88%" : showAuthor ? "86%" : "94%", flexShrink: 1, backgroundColor: mine ? t.messageBubble : t.bubble, borderRadius: 26, paddingHorizontal: 18, paddingVertical: 13, gap: 10 }}>
-        {!!message.text ? <MarkdownText onLongPress={!message.pending ? () => openActions() : undefined} fontSize={17} text={message.text} bots={bots} selfId={mine ? undefined : bot?.id} color={mine ? t.messageText : t.ink} onLink={url => {
+      <View style={{ maxWidth: mine ? "88%" : showAuthor ? "86%" : "94%", flexShrink: 1, backgroundColor: mine ? t.messageBubble : t.bubble, borderRadius: 26, paddingHorizontal: 18, paddingVertical: 13, gap: 10 }}>
+        {!!message.text ? <MarkdownText fontSize={17} text={message.text} bots={bots} selfId={mine ? undefined : bot?.id} color={mine ? t.messageText : t.ink} onLink={url => {
           if (!url.startsWith("https://bots.local/")) return false;
           try { const id = decodeURIComponent(url.slice("https://bots.local/".length)); if (bots?.some(item => item.id === id)) onOpenBot?.(id); } catch {}
           return true;
         }} /> : message.pending && !message.reasoning ? <Text style={{ color: t.muted, fontSize: 13 }}>{tr("Thinking…")}</Text> : null}
         {message.attachments?.map((attachment, index) => message.localSubmission ? <Text key={attachment.receiptId || index} style={{color:mine ? t.messageText : t.muted}}>{attachment.name}</Text> : !(Array.isArray(capabilities?.attachmentDownloads) && capabilities.attachmentDownloads.includes(attachment.type)) ? <View key={attachment.id || index}><Text style={{color:t.muted}}>{attachment.name}</Text><Notice text="当前电脑桥接暂不支持附件预览或下载。"/></View> : attachment.type === "image" ? <ImageAttachment key={attachment.id || index} attachment={attachment} message={message} client={client} conversationId={conversationId} /> : <FileAttachment key={attachment.id || index} attachment={attachment} message={message} client={client} conversationId={conversationId} color={mine ? t.messageText : undefined} />)}
-      </Pressable>
-
+      </View>
+    </View> : null}
+    {!message.pending && (hasText || !!message.attachments?.length) ? <View testID="message-toolbar" style={{ flexDirection: "row", alignItems: "center", alignSelf: mine ? "flex-end" : "flex-start", marginLeft: !mine && showAuthor && bot ? 36 : 0, gap: 2 }}>
+      {hasText ? <Pressable accessibilityRole="button" accessibilityLabel={tr(copied ? "Copied" : "Copy")} onPress={copyMessage} style={({pressed})=>({ width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: pressed ? t.hover : "transparent" })}><Icon name={copied ? "check" : "copy"} size={17} color={t.muted}/></Pressable> : null}
+      <Pressable accessibilityRole="button" accessibilityLabel={tr("Message actions")} onPress={openActions} style={({pressed})=>({ width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: pressed ? t.hover : "transparent" })}><Icon name="more" size={18} color={t.muted}/></Pressable>
+      {copied ? <Text accessibilityLiveRegion="polite" style={{ color: t.muted, fontSize: 12 }}>{tr("Copied")}</Text> : null}
     </View> : null}
     {message.interrupted ? <Text style={{ color: t.muted, fontSize: 12, marginLeft: 0 }}>{tr("Stopped")}</Text> : null}
     {!!reactions.length ? <View style={{ flexDirection: "row", gap: 4, justifyContent: mine ? "flex-end" : "flex-start" }}>
       {reactions.map(emoji => <Pressable key={emoji} accessibilityRole="button" accessibilityLabel={tr("Remove reaction ") + emoji} onPress={() => react(emoji)} style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: t.bubble }}><Text>{emoji}</Text></Pressable>)}
     </View> : null}
     <Notice error text={error} />
-    {copied && <Text accessibilityLiveRegion="polite" style={{color:t.muted,fontSize:12,textAlign:mine?"right":"left"}}>{tr("Copied")}</Text>}
     {speaking && <Pressable accessibilityRole="button" accessibilityLabel={tr("Stop reading")} onPress={()=>{reading.current=false;void Speech.stop();setSpeaking(false);}} style={{flexDirection:"row",alignItems:"center",gap:6,minHeight:44,alignSelf:"flex-start"}}><Icon name="stop" size={14} color={t.muted}/><Text style={{color:t.muted,fontSize:12}}>{tr("Stop reading")}</Text></Pressable>}
     <MessageActions visible={menu} author={author} preview={message.text} reactions={reactions} allowReactions={!mine} actions={actions} onReact={react} onClose={()=>setMenu(false)} onDismiss={runSystemAction} error={error}/>
 

@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { AnimatedPressable as Pressable } from "./components/Motion";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { Conversation, Message, MobileClient } from "@ds-bot/mobile-sdk";
 import {
   Busy,
@@ -570,7 +571,7 @@ function Shell() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <MotionProvider><Shell /></MotionProvider>
+      <KeyboardProvider><MotionProvider><Shell /></MotionProvider></KeyboardProvider>
     </SafeAreaProvider>
   );
 }
