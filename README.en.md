@@ -54,7 +54,7 @@ Pristine npm DS Bot `0.1.7` lacks the stable interfaces this Bridge needs. Relea
 
 Selected same-identity iPhone updates, online reads, scrolling and keyboard interactions have been checked. The complete first-pairing, live messaging, background, network-transition and Android device matrix remains incomplete. Immediate send feedback and failure recovery are tested in isolation, which does not replace physical-device validation.
 
-Current product work prioritizes Web. The native App remains a source preview. The 0.1.5 keyboard update is a candidate; the existing iPhone installation remains 0.1.4 build 8. Experimental selection handles are not part of this candidate.
+Current product work prioritizes Web. The native App remains a source preview. The 0.1.5 keyboard update is installed locally as build 9 with existing cache data preserved. Native Release simulator checks passed; physical keyboard interaction remains unverified because iOS UI automation timed out before running the test. Experimental selection handles are not part of this preview.
 
 ## Documentation
 
