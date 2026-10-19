@@ -36,3 +36,10 @@ test("table cells and headings can be selected independently without exposing Ma
   const cells = rows.flatMap(row => row.children.map(cell => selectionRuns(cell.children, base, options).map(run => run.text).join("")));
   assert.deepEqual(cells, ["A", "B", "one", "two"]);
 });
+
+test("CJK punctuation emphasis reaches native selection as bold runs and exact plain text", () => {
+  const nodes = markdownNodes("这是**重要：**后文，**括号（内容）**继续。");
+  const runs = selectionRuns(nodes, base, options);
+  assert.equal(runs.map(run => run.text).join(""), "这是重要：后文，括号（内容）继续。");
+  assert.deepEqual(runs.filter(run => run.fontWeight === "700").map(run => run.text), ["重要：", "括号（内容）"]);
+});

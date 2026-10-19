@@ -36,3 +36,29 @@ test("file references and web addresses never turn into callable Bot mentions",(
   const links:string[]=[];const walk=(items:typeof nodes)=>{for(const node of items){if(node.type==="link" && node.attrs.href.startsWith("https://bots.local/"))links.push(node.attrs.href);walk(node.children);}};
   walk(nodes);assert.deepEqual(links,["https://bots.local/docs"]);
 });
+
+test("CJK emphasis recognizes adjacent punctuation without exposing formatting markers", () => {
+  const examples = [
+    ["**中文：**后文", "中文："],
+    ["这是**加粗。**继续", "加粗。"],
+    ["中文**“引号”**后续", "“引号”"],
+    ["**中文（括号）**后续", "中文（括号）"],
+  ];
+  for (const [source, expected] of examples) {
+    const nodes = markdownNodes(source);
+    const strong: string[] = [];
+    const plain = (items: typeof nodes): string => items.map(node => node.children.length ? plain(node.children) : node.text).join("");
+    const walk = (items: typeof nodes) => { for (const node of items) { if (node.type === "strong") strong.push(plain(node.children)); walk(node.children); } };
+    walk(nodes);
+    assert.deepEqual(strong, [expected], source);
+    assert.ok(!plain(nodes).includes("**"), source);
+  }
+});
+
+test("CJK compatibility preserves intentional stars, code and incomplete streamed emphasis", () => {
+  const nodes = markdownNodes('\\*\\*保留星号\\*\\* `**中文：**后文`\n\n```md\n**中文：**后文\n```\n\n**尚未结束');
+  assert.equal(nodes[0].children[0].children[0].text, "**保留星号** ");
+  assert.equal(nodes[0].children[0].children.find(node => node.type === "code_inline")?.text, "**中文：**后文");
+  assert.equal(nodes[1].text, "**中文：**后文\n");
+  assert.equal(nodes[2].children[0].children[0].text, "**尚未结束");
+});
