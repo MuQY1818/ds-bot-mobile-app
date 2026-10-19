@@ -1,7 +1,7 @@
 {
   "name": "ds-bot-mobile-app-source",
   "private": true,
-  "version": "0.1.4-preview.1",
+  "version": "0.1.5-preview.1",
   "license": "Apache-2.0",
   "scripts": {
     "setup": "npm --prefix apps/mobile ci --ignore-scripts && npm --prefix bridge ci --ignore-scripts && npm --prefix companion ci --ignore-scripts",

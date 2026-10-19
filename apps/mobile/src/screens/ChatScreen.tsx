@@ -7,13 +7,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAvoidingView, KeyboardStickyView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
+import Reanimated, { useAnimatedStyle } from "react-native-reanimated";
 import { AnimatedPressable as Pressable } from "../components/Motion";
 import * as Speech from "expo-speech";
 import {
@@ -145,8 +146,11 @@ export function ChatScreen({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [referencePicker, setReferencePicker] = useState(false);
   const [composerFocused, setComposerFocused] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const keyboard = useReanimatedKeyboardAnimation();
   const [dockHeight, setDockHeight] = useState(88);
+  const historyDockInset = useAnimatedStyle(() => ({
+    paddingBottom: dockHeight - insets.bottom * keyboard.progress.value,
+  }), [dockHeight, insets.bottom]);
   const [inputHeight, setInputHeight] = useState(44);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [dismissedMention, setDismissedMention] = useState("");
@@ -157,9 +161,9 @@ export function ChatScreen({
   useEffect(() => setProgress({id:"",rounds:[]}), [conversation.id]);
   const composer = useMemo(() => referenceDraft(chat.draft), [chat.draft]);
   useEffect(() => {
-    const hide = Keyboard.addListener("keyboardDidHide", () => { setComposerFocused(false); setKeyboardVisible(false); });
-    const show = Keyboard.addListener("keyboardDidShow", () => { setKeyboardVisible(true); if(input.current?.isFocused()) setComposerFocused(true); });
-    return () => { hide.remove(); show.remove(); };
+    const hidden = Keyboard.addListener("keyboardDidHide", () => setComposerFocused(false));
+    const shown = Keyboard.addListener("keyboardDidShow", () => { if (input.current?.isFocused()) setComposerFocused(true); });
+    return () => { hidden.remove(); shown.remove(); };
   }, []);
   const [newMessages, setNewMessages] = useState(false);
   const [awayFromBottom, setAwayFromBottom] = useState(false);
@@ -291,17 +295,15 @@ export function ChatScreen({
     }
   }
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "web" ? undefined : "padding"}
-      keyboardVerticalOffset={insets.top}
-    >
+    <View style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
       <View pointerEvents="box-none" style={{ position: "absolute", top: 16, left: 20, right: 20, zIndex: 10 }}>
         <ChatHeader name={conversation.name} avatar={room ? <RoomAvatar room={room} team={team} size={30}/> : <BotAvatar bot={bot || {id:conversation.id,name:conversation.name}} size={30}/>}
           onBack={onOpenNavigation || (()=>setPicker(true))} onDetails={onOpenDetails || (()=>setPicker(true))} onMore={()=>setOptions(true)}/>
 
       </View>
+      {/* Resize the history independently; the composer must not be clipped by it. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "web" ? undefined : "padding"} keyboardVerticalOffset={insets.top}>
       <FlatList
         key={`${conversation.id}:${openRevision}`}
         ref={list}
@@ -311,12 +313,12 @@ export function ChatScreen({
         keyExtractor={(item) => item.id}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingTop: dockHeight + 12,
+          paddingTop: 12,
           paddingBottom: 82,
           flexGrow: 1,
         }}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        keyboardDismissMode="on-drag"
         onLayout={event => { const { width, height } = event.nativeEvent.layout; scroll.resize("viewport", width, height); }}
         scrollIndicatorInsets={{ top: dockHeight, bottom: 76 }}
         maintainVisibleContentPosition={HISTORY_ANCHOR}
@@ -395,7 +397,7 @@ export function ChatScreen({
           </View>;
         }}
         ListHeaderComponent={
-          <View>
+          <Reanimated.View style={historyDockInset}>
             {supportsMobileAction(team.mobileCapabilities, 'approvals', 'approvals') && <ApprovalCards client={client} conversationId={conversation.id} online={online} messages={chat.messages} canResolve={writable && allows("approval-resolve")} />}
             {bot && mobilePanelAllowed(team.mobileCapabilities, "secrets") ? <SecretRequestCards botId={bot.id} client={client} team={team} online={writable} refresh={refresh} /> : null}
             {chat.queue.map((item) => (
@@ -424,9 +426,11 @@ export function ChatScreen({
                 allowDismiss={allows("dismiss-question")}
               />
             ))}
-          </View>
+          </Reanimated.View>
         }
       />
+      </KeyboardAvoidingView>
+      <KeyboardStickyView offset={{ opened: insets.bottom }} style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10 }}>
       {awayFromBottom && (
         <View pointerEvents="box-none" style={{ position: "absolute", bottom: dockHeight + 8, left: 0, right: 0, zIndex: 11, alignItems: "center" }}>
           <Pressable accessibilityRole="button" accessibilityLabel={tr("Back to bottom")} accessibilityHint={newMessages ? tr("New messages") : undefined}
@@ -438,7 +442,7 @@ export function ChatScreen({
       )}
       <View pointerEvents="box-none"
         onLayout={event => { const height = Math.ceil(event.nativeEvent.layout.height); setDockHeight(previous => Math.abs(previous - height) > 1 ? height : previous); }}
-        style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10 }}>
+        style={{ zIndex: 10, backgroundColor: t.bg }}>
       {room && <GroupProgress client={client} room={room} team={team} running={chat.running} online={online && chat.status === "connected"} onOpenDetails={onOpenDetails} onProgress={receiveProgress} />}
       {ownWork && online && chat.status === "connected" && <WorkCapsule label={ownWork.switching ? tr("Moving to a fresh conversation") : workDescription(ownWork) || tr("Working")} onPress={onOpenDetails}/>}
       <View
@@ -446,7 +450,7 @@ export function ChatScreen({
         style={{
           paddingHorizontal: 20,
           paddingTop: 6,
-          paddingBottom: keyboardVisible ? 8 : insets.bottom + 8,
+          paddingBottom: insets.bottom + 8,
           gap: 9,
         }}
       >
@@ -568,6 +572,7 @@ export function ChatScreen({
 
       </View>
       </View>
+      </KeyboardStickyView>
       {voice ? <VoiceMode client={client} conversation={conversation} bot={bot} room={room} team={team} messages={chat.messages} running={chat.running} enabled={writable && chat.status === "connected" && !bot?.waiting} onSend={text => !writable || chat.pending || chat.busy || attachments.length ? Promise.resolve(null) : chat.sendVoice(text)} onStop={chat.cancel} onClose={() => setVoice(false)} /> : null}
       <Sheet title={tr("Conversation options")} visible={options} onClose={() => setOptions(false)}>
         {chat.running && canCancel && <Button secondary title={tr("Stop")} disabled={!writable || chat.busy} onPress={() => {setOptions(false);void chat.cancel();}}/>}
@@ -680,6 +685,6 @@ export function ChatScreen({
       </Sheet>
       <ReferencePicker client={client} conversationId={conversation.id} bots={team.bots} visible={referencePicker} online={writable && !chat.pending && !chat.busy} pick={pickReference} close={() => setReferencePicker(false)}/>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
