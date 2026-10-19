@@ -6,7 +6,7 @@ An iOS / Android source preview for your existing Bot team.
 
 **For direct phone access, start with [DS Bot Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web).** Web is the primary access path and requires no native build. This repository is for developers who want a native client and can prepare the platform toolchain.
 
-The current source preview is **0.1.4-preview.1**: native App **0.1.4**, desktop companion **0.2.0**, Mobile Bridge **0.0.6**. Ready-to-install IPA/APK files are not provided. Selection handles remain experimental and are not part of this preview.
+The current source preview is **0.1.5-preview.1**: native App **0.1.5**, desktop companion **0.2.0**, Mobile Bridge **0.0.6**. Ready-to-install IPA/APK files are not provided. Selection handles remain experimental and are not part of this preview.
 
 ## Preview
 
@@ -54,7 +54,7 @@ Pristine npm DS Bot `0.1.7` lacks the stable interfaces this Bridge needs. Relea
 
 Selected same-identity iPhone updates, online reads, scrolling and keyboard interactions have been checked. The complete first-pairing, live messaging, background, network-transition and Android device matrix remains incomplete. Immediate send feedback and failure recovery are tested in isolation, which does not replace physical-device validation.
 
-Current product work prioritizes Web. The native App remains a stable preview; experimental selection handles or simulator candidates are not advertised as released features.
+Current product work prioritizes Web. The native App remains a source preview. The 0.1.5 keyboard update is a candidate; the existing iPhone installation remains 0.1.4 build 8. Experimental selection handles are not part of this candidate.
 
 ## Documentation
 

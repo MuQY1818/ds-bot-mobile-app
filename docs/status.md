@@ -1,8 +1,8 @@
 # 当前状态
 
-更新日期：2026-10-19。当前主要使用入口和开发重点是 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。原生 App 保留稳定源码预览。
+更新日期：2026-10-19。当前主要使用入口和开发重点是 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。原生 App 保留源码预览，候选与现有手机安装分别标注。
 
-## 稳定预览
+## 源码与安装版本
 
 | 组件 | 当前版本 | 状态 |
 | --- | --- | --- |

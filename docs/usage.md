@@ -1,6 +1,6 @@
 # 原生 App 使用指南
 
-本页描述稳定源码预览 `0.1.4`。如果希望直接从浏览器使用，选择 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。
+本页描述原生 App 的基本操作。当前源码候选为 `0.1.5`，已有 iPhone 仍保留 `0.1.4` build `8`。如果希望直接从浏览器使用，选择 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。
 
 ## 会话与历史
 
