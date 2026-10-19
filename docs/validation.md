@@ -65,6 +65,10 @@ build `8` 增加点击即显示发送中气泡和独立下一条草稿，经 USB
 
 原生依赖版本为 keyboard-controller `1.18.5`、Reanimated `~4.1.1` 和 worklets `0.5.1`。完整工程检查和源码审计通过。上述交互证据来自专用模拟器中的实际组件，不等同 Android、第三方输入法或用户 iPhone 上的验证；用户手机仍保留 `0.1.4` build `8`。
 
+当前源码另行完成 arm64 Simulator 与 generic iOS Release 原生编译。使用新 Release 原生可执行程序、独立 QA 应用身份和相同合成聊天重复 XCUITest，全部场景通过，旧历史锚点整轮位移仍为 `0.0 pt`。staging 中的 106 个 `src` 文件及入口文件与当前源码一致。设备候选为 `0.1.5` build `9`，已沿用原应用身份、开发证书、entitlements 与 provisioning profile 完成本地签名和严格签名校验，未安装到手机。
+
+原生启动检查曾发现复制旧 Pods 后的配置缓存标记失真，使 Debug Hermes 与 Release React 混装。使用 React Native 官方引擎替换脚本修正后重新构建，并核对两个产物实际加载的 React / Hermes 原生切片均来自 Release 制品；随后才进行上述启动与交互验证。复用构建时应保留原生启动检查，不能仅凭编译成功推断可运行。
+
 ## 0.1.4 消息与滚动回归
 
 实际 `useConversation` hook 与 SDK 连接隔离 HTTP/WebSocket 服务器，共 14 项检查。点击发送后，在 SQLite、凭据或目标查询尚未完成的同一次渲染中，气泡显示“正在发送”、输入框清空、附件归入该气泡；未确认期间可编辑下一条草稿，单个未决请求完成前不重复发送。HTTP 尚未返回时不显示 Sent，canonical 消息与 HTTP 确认先后到达均只保留一条。新请求持久化后直接 POST；恢复或不确定的请求始终先查原回执，404 才提交相同载荷。
