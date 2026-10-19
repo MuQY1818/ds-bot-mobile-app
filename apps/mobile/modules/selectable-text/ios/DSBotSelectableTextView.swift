@@ -82,7 +82,10 @@ final class DSBotSelectableTextView: ExpoView, UITextViewDelegate {
       // selection, so the delegate alone cannot dismiss the previous paragraph.
       Self.clearActiveSelection()
     }
-    textView.addGestureRecognizer(touchObserver)
+    // Observe at the Expo wrapper: UITextView owns and reconfigures its internal
+    // gesture recognizers while presenting and dismissing selection interactions.
+    // An ancestor still receives touches hit-tested to the UITextView subtree.
+    addGestureRecognizer(touchObserver)
     // The UITextView is the only accessibility element; do not repeat its text
     // at the Expo wrapper as well.
     isAccessibilityElement = false
@@ -92,7 +95,7 @@ final class DSBotSelectableTextView: ExpoView, UITextViewDelegate {
   static func clearActiveSelection() {
     guard let active = activeTextView else { return }
     activeTextView = nil
-    active.selectedTextRange = nil
+    active.selectedRange = NSRange(location: 0, length: 0)
     active.resignFirstResponder()
   }
 
@@ -102,7 +105,7 @@ final class DSBotSelectableTextView: ExpoView, UITextViewDelegate {
       if Self.activeTextView === textView {
         Self.activeTextView = nil
       }
-      textView.selectedTextRange = nil
+      textView.selectedRange = NSRange(location: 0, length: 0)
       textView.resignFirstResponder()
       pendingHeight = nil
     } else {
@@ -191,7 +194,7 @@ final class DSBotSelectableTextView: ExpoView, UITextViewDelegate {
     guard !updatingText, textView.selectedRange.length > 0 else { return }
     if let previous = Self.activeTextView, previous !== textView {
       Self.activeTextView = nil
-      previous.selectedTextRange = nil
+      previous.selectedRange = NSRange(location: 0, length: 0)
       previous.resignFirstResponder()
     }
     Self.activeTextView = textView
