@@ -1,5 +1,25 @@
 import ExpoModulesCore
 import UIKit
+import UIKit.UIGestureRecognizerSubclass
+
+// Observe contact with a new paragraph without recognizing or competing with
+// UIKit's word-selection, handle-dragging, link or scrolling gestures.
+private final class SelectionTouchObserver: UIGestureRecognizer {
+  var onTouchBegan: (() -> Void)?
+
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+    onTouchBegan?()
+    state = .failed
+  }
+
+  override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool {
+    false
+  }
+
+  override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool {
+    false
+  }
+}
 
 final class DSBotSelectableTextView: ExpoView, UITextViewDelegate {
   let onContentSizeChange = EventDispatcher()
@@ -52,6 +72,17 @@ final class DSBotSelectableTextView: ExpoView, UITextViewDelegate {
     textView.adjustsFontForContentSizeCategory = true
     textView.isAccessibilityElement = true
     textView.delegate = self
+    let touchObserver = SelectionTouchObserver(target: nil, action: nil)
+    touchObserver.cancelsTouchesInView = false
+    touchObserver.delaysTouchesBegan = false
+    touchObserver.delaysTouchesEnded = false
+    touchObserver.onTouchBegan = { [weak self] in
+      guard let self, let previous = Self.activeTextView, previous !== self.textView else { return }
+      // A plain tap in a read-only UITextView need not create a nonempty new
+      // selection, so the delegate alone cannot dismiss the previous paragraph.
+      Self.clearActiveSelection()
+    }
+    textView.addGestureRecognizer(touchObserver)
     // The UITextView is the only accessibility element; do not repeat its text
     // at the Expo wrapper as well.
     isAccessibilityElement = false
