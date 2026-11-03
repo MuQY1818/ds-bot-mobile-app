@@ -1,7 +1,7 @@
 import { isAbsolute, resolve } from 'node:path'
 import { createAdapter } from './src/adapter.mjs'
 import { createMobileServer } from './src/server.js'
-import { validateConfig } from './src/config.mjs'
+import { resolveDsBotHome, validateConfig } from './src/config.mjs'
 import { registerOwnerOperator } from './src/operator.mjs'
 export { Config } from './src/config.mjs'
 
@@ -13,7 +13,7 @@ export async function startBridge(ctx, config) {
   const home = resolve(config.home)
   if (home === resolve(process.env.DSH_HOME ?? '/__unset__')) throw new Error('Bridge home must be separate from DSH_HOME.')
   // Synthetic transcript mode is intentionally unavailable in the production entry.
-  const adapter = createAdapter({ connection: ctx.connection, sessionController: ctx.sessionController })
+  const adapter = createAdapter({ connection: ctx.connection, sessionController: ctx.sessionController, dsBotHome: resolveDsBotHome(config.dsBotHome) })
   try {
     await adapter.initialize()
     const server = await createMobileServer({ home, config, adapter })

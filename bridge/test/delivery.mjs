@@ -81,7 +81,7 @@ try {
   const bridgeArchive = process.argv[2] ? resolve(process.argv[2])
     : join(home, JSON.parse(command('npm', ['pack', '--json', '--pack-destination', home]))[0].filename)
   await access(bridgeArchive)
-  await writeFile(join(profile, 'package.json'), JSON.stringify({ name: 'isolated-public-bridge-delivery', private: true, dependencies: { '@deepseek-ai/dsh': '0.2.1-rc.2', 'ds-bot-mobile-bridge': `file:${bridgeArchive}` }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } } }))
+  await writeFile(join(profile, 'package.json'), JSON.stringify({ name: 'isolated-public-bridge-delivery', private: true, dependencies: { '@deepseek-ai/dsh': '0.2.1-rc.5', 'ds-bot-mobile-bridge': `file:${bridgeArchive}` }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } } }))
   console.log('Installing public DSH and packed bridge into a fresh profile...')
   command('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--prefer-offline', '--registry=https://registry.npmjs.org'], profile)
   // DS Bot is a frozen test fixture, not an installation or patch target. Copy
@@ -92,10 +92,10 @@ try {
   const fixturePatch = `- insert:\n    - id: bot\n      name: ${JSON.stringify(join(fixtureBot, 'index.js'))}\n    - id: delivery-manager-fixture\n      name: ${JSON.stringify(join(root, 'test/delivery-operator.mjs'))}\n`
   await writeFile(join(profile, 'cordis.patch.yml'), fixturePatch)
   const installed = JSON.parse(await readFile(join(profile, 'node_modules/@deepseek-ai/dsh/package.json'), 'utf8'))
-  assert.equal(installed.version, '0.2.1-rc.2')
+  assert.equal(installed.version, '0.2.1-rc.5')
   assert.equal(JSON.parse(await readFile(join(profile, 'node_modules/ds-bot-mobile-bridge/package.json'), 'utf8')).version, manifest.version)
   for (const [path, hash] of sourceHashes) assert.equal(digest(await readFile(join(profile, 'node_modules/ds-bot-mobile-bridge', path))), hash, `Archive source mismatch: ${path}`)
-   check(`clean profile installs exact public npm DSH 0.2.1-rc.2 and packed bridge ${manifest.version}`)
+   check(`clean profile installs exact public npm DSH 0.2.1-rc.5 and packed bridge ${manifest.version}`)
   const mockPort = await port(), webPort = await port()
   start('mock-model', [join(root, '../ds-bot/dev/mock-llm.mjs')], { MOCK_PORT: String(mockPort), MOCK_LOG: join(home, 'mock.jsonl'), MOCK_DELAY_MS: '20', MOCK_JITTER_MS: '0' })
   await boot(mockPort, webPort)
@@ -121,7 +121,7 @@ try {
   const bridgeUrl = status.url
   const discovery = await (await fetch(`${bridgeUrl}/mobile/v1/info`)).json()
   assert.equal(discovery.capabilities.send, true); assert.equal(discovery.capabilities.history, true); assert.deepEqual(discovery.compatibility.missing, [])
-  check('configured packaged entry starts on an allocated port and discovers the existing three-interface fixture')
+  check('configured packaged entry starts on an allocated port and provides the in-process contract over official state/send')
   client = new MobileClient({ baseUrl: bridgeUrl, allowInsecure: true, tokenStore: new MemoryTokenStore(), WebSocket })
   const pairing = await rpc('/mobile-operator', 'pairing.create')
   const claim = await client.pair(pairing.code, 'Isolated delivery device')

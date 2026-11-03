@@ -13,7 +13,7 @@ export async function launchFixture() {
   await chmod(home, 0o700)
   const deps = resolve(process.env.BRIDGE_TEST_DEPS ?? join(root, 'fixture/deps/node_modules'))
   const dsh = JSON.parse(await readFile(join(deps, '@deepseek-ai/dsh/package.json'), 'utf8'))
-  if (dsh.version !== '0.2.1-rc.2') throw Error('Fixture requires public DSH 0.2.1-rc.2')
+  if (dsh.version !== '0.2.1-rc.5') throw Error('Fixture requires public DSH 0.2.1-rc.5')
   const children = [], env = { PATH: process.env.PATH, HOME: home, DSH_HOME: home, TMPDIR: process.env.TMPDIR ?? '/tmp', LANG: 'en_US.UTF-8' }
   const close = async () => {
     for (const { child } of [...children].reverse()) {
@@ -33,9 +33,11 @@ export async function launchFixture() {
   }
   try {
     await mkdir(join(home, 'profiles/web/node_modules'), { recursive: true })
-    await cp(resolve(process.env.BRIDGE_TEST_BOT ?? join(root, 'fixture/extended/package')), join(home, 'profiles/web/node_modules/ds-bot'), { recursive: true, filter: source => !source.includes('/node_modules') })
+    await cp(resolve(process.env.BRIDGE_TEST_BOT ?? join(root, 'fixture/official/package')), join(home, 'profiles/web/node_modules/ds-bot'), { recursive: true, filter: source => !source.includes('/node_modules') })
     await symlink(join(deps, '@deepseek-ai'), join(home, 'profiles/web/node_modules/@deepseek-ai'))
-    await writeFile(join(home, 'profiles/web/package.json'), JSON.stringify({ name: 'candidate-isolated-profile', private: true, dependencies: { 'ds-bot': '0.1.7' }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'ds-bot'] } } }))
+    // DS Bot 0.2.6 has one public runtime dependency outside the @deepseek-ai scope.
+    await symlink(join(deps, 'deep-view'), join(home, 'profiles/web/node_modules/deep-view'))
+    await writeFile(join(home, 'profiles/web/package.json'), JSON.stringify({ name: 'candidate-isolated-profile', private: true, dependencies: { 'ds-bot': '0.2.6' }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'ds-bot'] } } }))
     const ready = join(home, 'ready.json'), patch = join(home, 'fixture.patch.yml')
     await writeFile(patch, `- insert:\n    - id: candidate-fixture\n      name: ${JSON.stringify(join(root, 'test/fixture-plugin.mjs'))}\n      config:\n        home: ${JSON.stringify(join(home, 'bridge-home'))}\n        ready: ${JSON.stringify(ready)}\n`)
     const mockPort = await port(), webPort = await port()

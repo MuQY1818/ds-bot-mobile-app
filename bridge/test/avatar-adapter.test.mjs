@@ -1,7 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { createAdapter } from '../src/adapter.mjs'
 test('real candidate adapter carries avatars through both state and conversations', async () => {
+  const dsBotHome = await mkdtemp(`${tmpdir()}/ds-bot-avatar-`)
   const fixture = { revision:1, rooms:[], models:[], mainBotIds:['fixture-chief'], bots:[
     {id:'fixture-chief',sessionId:'fixture-chief-chat',name:'Fixture Chief',color:'deepseek',avatar:{shape:'whale',path:'/private'},instructions:'private'},
     {id:'fixture-cat',sessionId:'fixture-cat-chat',name:'Fixture Cat',color:'yellow',avatar:{shape:'kitty',image:'file:///private/photo.png'},workDir:'/private'},
@@ -11,7 +14,8 @@ test('real candidate adapter carries avatars through both state and conversation
     const {endpoint} = await request.json()
     return Response.json({ok:true,value:endpoint === 'state' ? fixture : {version:1}})
   } }) }
-  const adapter = createAdapter({connection})
+  const adapter = createAdapter({connection, dsBotHome})
+  try {
   await adapter.initialize()
   const state = await adapter.state()
   const list = await adapter.conversations()
@@ -23,4 +27,8 @@ test('real candidate adapter carries avatars through both state and conversation
   assert.deepEqual(list.conversations,state.bots)
   assert.ok(!JSON.stringify(state).includes('/private'))
   assert.ok(!JSON.stringify(state).includes('instructions'))
+  } finally {
+    await adapter.dispose()
+    await rm(dsBotHome, {recursive:true, force:true})
+  }
 })

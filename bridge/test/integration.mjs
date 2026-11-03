@@ -24,7 +24,7 @@ try {
   client = new MobileClient({ baseUrl: urls.bridgeUrl, allowInsecure: true, tokenStore: new MemoryTokenStore(), WebSocket: TrackedWebSocket, reconnectDelayMs: 20 })
   const operator = async (endpoint, payload) => { const response = await fetch(urls.operatorUrl, { method: 'POST', headers: { 'x-fixture': 'bridge-test-only' }, body: JSON.stringify({ endpoint, payload }) }); assert.equal(response.status, 200); return response.json() }
   assert.equal((await client.info()).capabilities.groups, true)
-  check('group capability requires the reviewed group contract')
+  check('group capability is implemented by the bridge against the official DS Bot contract')
   const pairing = await operator('pairing.create'), claim = await client.pair(pairing.code, 'Synthetic group client')
   await operator('pairing.approve', { requestId: claim.requestId })
   const session = await client.completePairing(claim.claimToken)
@@ -86,7 +86,7 @@ try {
   assert.deepEqual(errors, [])
   assert.equal(JSON.stringify(frames).includes('ds-bot-test-known-secret-123456789'), false)
   assert.equal(JSON.stringify(await client.messages(room.id)).includes('ds-bot-test-known-secret-123456789'), false)
-  check('live group tool result author projection and upstream known-value redaction')
+  check('live group tool result author projection and in-process known-value redaction')
   const resets = frames.filter(frame => frame.type === 'reset').length
   sockets.at(-1).terminate()
   await waitFor(() => assert.ok(frames.filter(frame => frame.type === 'reset').length > resets))
@@ -182,7 +182,7 @@ try {
   assert.equal(updatedAuthor.name, 'Bot [secret:[redacted]')
   assert.equal(JSON.stringify(labelHistory).includes('ds-bot-test-known-secret-123456789'), false)
   check('Bot/group state names and group author labels pass DS Bot known-value redaction')
-  console.log(`${passed} CANDIDATE integration assertions passed; public DSH 0.2.1-rc.2 + reviewed DS Bot fixture source + scripted mock.`)
+  console.log(`${passed} CANDIDATE integration assertions passed; public DSH 0.2.1-rc.5 + pristine public DS Bot 0.2.6 + scripted mock.`)
 } catch (error) {
   console.error(`Group integration failed: ${error.code ?? error.name}: ${error.message}`)
   if (fixture) await writeFile(join(fixture.home, 'failure.log'), fixture.diagnostics())

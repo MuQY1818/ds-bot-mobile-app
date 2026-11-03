@@ -40,3 +40,6 @@ add a bounded avatar projection, exact public-image grants, compatibility tests,
 and narrow candidate patches for the mobile adapter and React Native renderer.
 The shapes, SVG paths, eye coordinates, inks and default selection algorithms
 are unchanged. No new artwork or UI dependencies were added.
+
+bridge/src/redactor.mjs contains the known-value redactor copied verbatim from
+DS Bot 0.2.6 src/host/secrets.js (https://github.com/Fei2411/DS-Bot), Apache-2.0.

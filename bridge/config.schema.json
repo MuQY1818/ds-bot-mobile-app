@@ -6,6 +6,7 @@
   "properties": {
     "enabled": { "type": "boolean", "default": false },
     "home": { "type": "string", "minLength": 1, "description": "Dedicated absolute bridge directory, separate from DSH_HOME. No default." },
+    "dsBotHome": { "type": "string", "minLength": 1, "pattern": "^(?:/|[A-Za-z]:[\\\\/]|\\\\\\\\)", "description": "Absolute DS Bot data directory containing secrets.json. Defaults to DSH_HOME/bot or ~/.dsh/bot." },
     "host": { "type": "string", "minLength": 1, "default": "127.0.0.1" },
     "port": { "type": "integer", "minimum": 0, "maximum": 65535, "default": 0 },
     "publicUrl": { "type": "string", "format": "uri", "description": "Existing HTTPS origin without credentials, path or query; required without direct TLS except in explicit loopback development mode." },

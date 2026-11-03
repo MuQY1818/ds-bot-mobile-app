@@ -3,11 +3,12 @@ import { BridgeError } from './auth.js'
 import { projectRecords, detail } from './projection.js'
 import { createTeamActions, MOBILE_ACTIONS } from './actions.mjs'
 import { projectGroupRecords } from './group-projection.mjs'
+import { createTeamContract } from './team-contract.mjs'
 
 const error = (status, code, text) => new BridgeError(status, code, text)
 const unsupported = () => { throw error(501, 'UNSUPPORTED', 'This bridge capability is unavailable.') }
 const validSeq = value => Number.isSafeInteger(value) && value >= -1
-export function createAdapter({ connection, sessionController, fixtureText = false }) {
+export function createAdapter({ connection, sessionController, dsBotHome, fixtureText = false }) {
   if (typeof connection?.createSharedFetchHandler !== 'function') throw error(503, 'CONNECTION_UNAVAILABLE', 'The public Connection dispatcher is unavailable.')
   const dispatcher = connection.createSharedFetchHandler('/api')
   const peer = connection.createPeer?.({ principal: { kind: 'owner' } })
@@ -16,18 +17,39 @@ export function createAdapter({ connection, sessionController, fixtureText = fal
   const shutdown = new AbortController()
   // This allowlist is entirely internal. No mobile-supplied endpoint reaches it.
   const allowed = new Set(['state', 'bridge.describe', 'bridge.submit', 'bridge.redact', ...MOBILE_ACTIONS])
-  async function call(endpoint, payload = {}, signal = AbortSignal.timeout(30_000)) {
+  const botStatus = code => ({ 'bot/not-found': 501, 'bot/invalid': 400, 'bot/stale': 409, 'bot/read-only': 409, 'bot/unavailable': 503, 'bot/unconfirmed': 503 })[code] ?? 503
+  async function dispatch(endpoint, payload, signal) {
     if (disposed) throw error(503, 'DISPOSED', 'The bridge has stopped.')
-    if (!allowed.has(endpoint)) throw error(403, 'ACTION_NOT_ALLOWED', 'Unsupported team operation.')
     const response = await dispatcher.fetch(new Request('http://bridge.invalid/api/bot', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ endpoint, payload }), signal,
     }), peer)
     if (!response.ok) throw error(503, 'TEAM_UNAVAILABLE', 'The existing DS Bot channel is unavailable.')
-    const result = await response.json()
+    return response.json()
+  }
+  const teamContract = createTeamContract({
+    dsBotHome,
+    prompt: typeof sessionController?.prompt === 'function' ? (request, signal) => sessionController.prompt(request, signal) : undefined,
+    callTeam: async (endpoint, payload, signal = AbortSignal.timeout(30_000)) => {
+      if (endpoint !== 'state') throw error(403, 'ACTION_NOT_ALLOWED', 'Unsupported team operation.')
+      return dispatch(endpoint, payload, signal)
+    },
+  })
+  async function call(endpoint, payload = {}, signal = AbortSignal.timeout(30_000)) {
+    if (disposed) throw error(503, 'DISPOSED', 'The bridge has stopped.')
+    if (!allowed.has(endpoint)) throw error(403, 'ACTION_NOT_ALLOWED', 'Unsupported team operation.')
+    if (endpoint === 'bridge.describe') return teamContract.describe()
+    if (endpoint === 'bridge.redact' || endpoint === 'bridge.submit') {
+      try {
+        return endpoint === 'bridge.redact' ? await teamContract.redact(payload, signal) : await teamContract.submit(payload, signal)
+      } catch (cause) {
+        const code = typeof cause?.code === 'string' ? cause.code : 'bot/unavailable'
+        throw error(botStatus(code), code, 'The existing team could not confirm the operation.')
+      }
+    }
+    const result = await dispatch(endpoint, payload, signal)
     if (result?.ok !== true) {
       const code = result?.error?.code ?? 'TEAM_REFUSED'
-      const status = ({ 'bot/not-found': 501, 'bot/invalid': 400, 'bot/stale': 409, 'bot/read-only': 409 })[code] ?? 503
-      throw error(status, code, 'The existing team could not confirm the operation.')
+      throw error(botStatus(code), code, 'The existing team could not confirm the operation.')
     }
     return result.value
   }
@@ -212,7 +234,7 @@ export function createAdapter({ connection, sessionController, fixtureText = fal
     async target(id, signal) { const item = await target(id, signal); return { conversationId: id, sessionId: item.sessionId, revision: item.revision, kind: item.kind } },
     history,
     async submit({ conversationId, sessionId, requestId, text, attachments }, signal) {
-      if (description.version !== 1 || description.stableRequestId !== true) throw error(501, 'STABLE_SUBMIT_REQUIRED', 'DS Bot 0.1.7 needs the reviewed bridge submit extension for reliable sending.')
+      if (description.version !== 1 || description.stableRequestId !== true) throw error(501, 'STABLE_SUBMIT_REQUIRED', 'The bridge stable submit contract is unavailable.')
       const item = await target(conversationId, signal)
       if (item.sessionId !== sessionId || item.readOnly) throw error(409, 'TARGET_CHANGED', 'Refresh the writable conversation target.')
       if (attachments?.length || !text?.trim() || text.includes('dsh-session:')) throw error(400, 'INVALID_CONTENT', 'Only plain text without Session references is supported.')
