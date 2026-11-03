@@ -13,7 +13,7 @@ export function apply(ctx, config) {
       const call = async (endpoint, payload = {}) => {
         const response = await dispatcher.fetch(new Request('http://fixture.invalid/api/bot', { method: 'POST', body: JSON.stringify({ endpoint, payload }) }), peer)
         const result = await response.json()
-        if (result.ok !== true) throw Object.assign(Error('Synthetic setup refused'), { code: result.error?.code })
+        if (result.ok !== true) throw Object.assign(Error(`Synthetic setup refused: ${endpoint}: ${result.error?.message ?? ''}`), { code: result.error?.code })
         return result.value
       }
       bridge = await startBridge(ctx, { home: config.home, port: 0, host: '127.0.0.1', devAllowInsecure: true })
@@ -53,7 +53,7 @@ export function apply(ctx, config) {
       const seeded = await createGroup(), view = await call('state')
       await writeFile(config.ready, JSON.stringify({ bridgeUrl: bridge.url, operatorUrl: `http://127.0.0.1:${operator.address().port}`, botId: view.bots[0].id, sessionId: view.bots[0].sessionId, groupId: seeded.id, memberIds: seeded.members }), { mode: 0o600 })
     })()
-    ready.catch(error => process.stderr.write(`Candidate fixture startup failed: ${error.code ?? error.name}\n`))
+    ready.catch(error => process.stderr.write(`Candidate fixture startup failed: ${error.code ?? error.name} ${error.message}\n`))
     return async () => { stopped = true; await ready.catch(() => {}); operator?.closeAllConnections(); if (operator) await new Promise(resolve => operator.close(resolve)); await bridge?.close(); await peer?.dispose() }
   })
 }

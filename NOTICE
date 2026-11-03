@@ -83,7 +83,7 @@ export include independent build/test dependencies, owner-supplied Android
 signing, reproducible CI, current documentation and public package metadata.
 The App characterData.json and BotAvatar algorithms use original DS Bot 0.1.7
 artwork by Fei2411 and contributors, Apache-2.0, source commit
-939a6635830cb5b246e7dd19c67b0e1352ad1c07. See bridge/NOTICE for bridge provenance.
+939a6635830cb5b246e7dd19c67b0e1352ad1c07. See companion/NOTICE for the server-side provenance (formerly bridge/).
 
 The mobile Markdown parser uses markdown-it-cjk-friendly 3.0.0 by Tatsunori
 Uchino and get-east-asian-width by Sindre Sorhus, both MIT-licensed, as npm

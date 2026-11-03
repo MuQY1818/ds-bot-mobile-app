@@ -34,7 +34,7 @@ export function DevicesPage({ controller }) {
   return h('section', { className: 'dsma-page', 'aria-label': 'App 连接与设备管理' },
     h('div', { className: 'dsma-state-row' }, h('span', { className: 'dsma-state', 'data-ready': enabled, role: 'status' }, h('i', { 'aria-hidden': true }), enabled ? '连接服务已就绪' : state.error ? '暂时无法连接' : status ? '等待配置' : '正在检查连接…'), h('button', { type: 'button', className: 'dsma-icon-button', disabled: state.busy, onClick: controller.refresh, 'aria-label': '刷新设备状态' }, h(DeviceIcon, { refresh: true }))),
     state.error ? h('p', { className: 'dsma-error', role: 'alert' }, state.error) : null,
-    !enabled ? h('div', { className: 'dsma-setup' }, h('h3', null, '准备 App 连接'), h('p', null, '先启用 Mobile Bridge，并设置手机可访问的 HTTPS 地址。'), h('a', { href: 'https://github.com/MuQY1818/ds-bot-mobile-app/blob/main/docs/installation.md', target: '_blank', rel: 'noreferrer' }, '查看设置指南')) :
+    !enabled ? h('div', { className: 'dsma-setup' }, h('h3', null, '准备 App 连接'), h('p', null, '在本插件配置里打开 App 连接（enabled、home），并设置手机可访问的 HTTPS 地址。'), h('a', { href: 'https://github.com/MuQY1818/ds-bot-mobile-app/blob/main/docs/installation.md', target: '_blank', rel: 'noreferrer' }, '查看设置指南')) :
     h('div', null,
       h('div', { className: 'dsma-add' }, h('div', { className: 'dsma-section-head' }, h('h3', null, '连接 App'), !state.pairing ? h('button', { type: 'button', className: 'dsma-primary', disabled: state.busy, onClick: controller.create }, state.busy ? '正在生成…' : '生成配对二维码') : null),
         h('p', null, '用手机 App 扫码，再在电脑上批准连接。'),

@@ -2138,7 +2138,7 @@ function createOperatorClient({ root, fetchImpl = fetch, location: location2 = g
     if (!METHODS.has(method)) throw Error("Unsupported device operation");
     const rpcId = uuid();
     const response = await fetchImpl(new URL(`mobile-operator/${method}`, base), { method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "client-request", rpcId, method, payload }), signal });
-    if (!response.ok) throw Object.assign(Error(response.status === 404 || response.status === 405 ? "Mobile Bridge is not enabled. Install and configure the Bridge first." : response.status === 401 || response.status === 403 ? "Open this page in the authenticated computer owner session." : "Could not reach Mobile Bridge. Check the host connection."), { code: `HTTP_${response.status}` });
+    if (!response.ok) throw Object.assign(Error(response.status === 404 || response.status === 405 ? "The App connection is not enabled. Turn it on in the DS Bot Mobile App plugin settings first." : response.status === 401 || response.status === 403 ? "Open this page in the authenticated computer owner session." : "Could not reach the App connection. Check the host connection."), { code: `HTTP_${response.status}` });
     const body = await response.json();
     if (body?.type !== "server-response" || body.rpcId !== rpcId || body.result?.ok !== true) throw Error("The device operation was refused. Refresh status before trying again.");
     return body.result.value;
@@ -2191,7 +2191,7 @@ function createDeviceController({ call, now = Date.now }) {
       if (disposed || issued !== generation) return;
       if (method === "pairing.create") {
         const url = new URL(value.url);
-        if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || !value.code || !value.serverId || !(value.expiresAt > now())) throw Error("Bridge returned invalid HTTPS pairing data.");
+        if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || !value.code || !value.serverId || !(value.expiresAt > now())) throw Error("The App connection returned invalid HTTPS pairing data.");
         emit({ pairing: { url: value.url, code: value.code, serverId: value.serverId, expiresAt: value.expiresAt } });
       }
       emit({ confirmRevoke: null });
@@ -2559,7 +2559,7 @@ function DevicesPage({ controller }) {
     { className: "dsma-page", "aria-label": "App 连接与设备管理" },
     (0, import_react2.createElement)("div", { className: "dsma-state-row" }, (0, import_react2.createElement)("span", { className: "dsma-state", "data-ready": enabled, role: "status" }, (0, import_react2.createElement)("i", { "aria-hidden": true }), enabled ? "连接服务已就绪" : state.error ? "暂时无法连接" : status ? "等待配置" : "正在检查连接…"), (0, import_react2.createElement)("button", { type: "button", className: "dsma-icon-button", disabled: state.busy, onClick: controller.refresh, "aria-label": "刷新设备状态" }, (0, import_react2.createElement)(DeviceIcon, { refresh: true }))),
     state.error ? (0, import_react2.createElement)("p", { className: "dsma-error", role: "alert" }, state.error) : null,
-    !enabled ? (0, import_react2.createElement)("div", { className: "dsma-setup" }, (0, import_react2.createElement)("h3", null, "准备 App 连接"), (0, import_react2.createElement)("p", null, "先启用 Mobile Bridge，并设置手机可访问的 HTTPS 地址。"), (0, import_react2.createElement)("a", { href: "https://github.com/MuQY1818/ds-bot-mobile-app/blob/main/docs/installation.md", target: "_blank", rel: "noreferrer" }, "查看设置指南")) : (0, import_react2.createElement)(
+    !enabled ? (0, import_react2.createElement)("div", { className: "dsma-setup" }, (0, import_react2.createElement)("h3", null, "准备 App 连接"), (0, import_react2.createElement)("p", null, "在本插件配置里打开 App 连接（enabled、home），并设置手机可访问的 HTTPS 地址。"), (0, import_react2.createElement)("a", { href: "https://github.com/MuQY1818/ds-bot-mobile-app/blob/main/docs/installation.md", target: "_blank", rel: "noreferrer" }, "查看设置指南")) : (0, import_react2.createElement)(
       "div",
       null,
       (0, import_react2.createElement)(

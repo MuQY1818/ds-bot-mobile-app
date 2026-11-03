@@ -8,12 +8,12 @@ const root = resolve(import.meta.dirname, '..')
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function port() { const server = createServer(); server.listen(0, '127.0.0.1'); await once(server, 'listening'); const value = server.address().port; await new Promise(resolve => server.close(resolve)); return value }
 export async function launchFixture() {
-  await mkdir(join(root, 'fixture'), { recursive: true })
-  const home = await mkdtemp(join(root, 'fixture/.dsh-test-candidate-'))
+  await mkdir(join(root, 'fixture-server'), { recursive: true })
+  const home = await mkdtemp(join(root, 'fixture-server/.dsh-test-candidate-'))
   await chmod(home, 0o700)
-  const deps = resolve(process.env.BRIDGE_TEST_DEPS ?? join(root, 'fixture/deps/node_modules'))
+  const deps = resolve(process.env.BRIDGE_TEST_DEPS ?? join(root, 'fixture-server/deps/node_modules'))
   const dsh = JSON.parse(await readFile(join(deps, '@deepseek-ai/dsh/package.json'), 'utf8'))
-  if (dsh.version !== '0.2.1-rc.2') throw Error('Fixture requires public DSH 0.2.1-rc.2')
+  if (dsh.version !== '0.2.1-rc.5') throw Error('Fixture requires public DSH 0.2.1-rc.5')
   const children = [], env = { PATH: process.env.PATH, HOME: home, DSH_HOME: home, TMPDIR: process.env.TMPDIR ?? '/tmp', LANG: 'en_US.UTF-8' }
   const close = async () => {
     for (const { child } of [...children].reverse()) {
@@ -33,11 +33,13 @@ export async function launchFixture() {
   }
   try {
     await mkdir(join(home, 'profiles/web/node_modules'), { recursive: true })
-    await cp(resolve(process.env.BRIDGE_TEST_BOT ?? join(root, 'fixture/extended/package')), join(home, 'profiles/web/node_modules/ds-bot'), { recursive: true, filter: source => !source.includes('/node_modules') })
+    await cp(resolve(process.env.BRIDGE_TEST_BOT ?? join(root, 'fixture-server/official/package')), join(home, 'profiles/web/node_modules/ds-bot'), { recursive: true, filter: source => !source.includes('/node_modules') })
     await symlink(join(deps, '@deepseek-ai'), join(home, 'profiles/web/node_modules/@deepseek-ai'))
-    await writeFile(join(home, 'profiles/web/package.json'), JSON.stringify({ name: 'candidate-isolated-profile', private: true, dependencies: { 'ds-bot': '0.1.7' }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'ds-bot'] } } }))
+    // DS Bot 0.2.6 has one public runtime dependency outside the @deepseek-ai scope.
+    await symlink(join(deps, 'deep-view'), join(home, 'profiles/web/node_modules/deep-view'))
+    await writeFile(join(home, 'profiles/web/package.json'), JSON.stringify({ name: 'candidate-isolated-profile', private: true, dependencies: { 'ds-bot': '0.2.6' }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'ds-bot'] } } }))
     const ready = join(home, 'ready.json'), patch = join(home, 'fixture.patch.yml')
-    await writeFile(patch, `- insert:\n    - id: candidate-fixture\n      name: ${JSON.stringify(join(root, 'test/fixture-plugin.mjs'))}\n      config:\n        home: ${JSON.stringify(join(home, 'bridge-home'))}\n        ready: ${JSON.stringify(ready)}\n`)
+    await writeFile(patch, `- insert:\n    - id: candidate-fixture\n      name: ${JSON.stringify(join(root, 'test-server/fixture-plugin.mjs'))}\n      config:\n        home: ${JSON.stringify(join(home, 'bridge-home'))}\n        ready: ${JSON.stringify(ready)}\n`)
     const mockPort = await port(), webPort = await port()
     start('mock-model', [resolve(root, '../ds-bot/dev/mock-llm.mjs')], { MOCK_PORT: String(mockPort), MOCK_LOG: join(home, 'mock.jsonl'), MOCK_DELAY_MS: '200', MOCK_JITTER_MS: '0' })
     start('public-dsh', [join(deps, '@deepseek-ai/dsh/lib/bin.js'), '--profile', 'web', '--patch', patch, '--no-open', '--port', String(webPort)], { DEEPSEEK_BASE_URL: `http://127.0.0.1:${mockPort}/v1`, DEEPSEEK_API_KEY: 'ds-bot-test-mock-only' })
@@ -47,14 +49,14 @@ export async function launchFixture() {
       try { urls = JSON.parse(await readFile(ready, 'utf8')); break } catch { await delay(100) }
     }
     if (!urls) throw Error('Candidate fixture readiness timeout')
-    await writeFile(join(root, 'fixture/ready.json'), JSON.stringify({ ...urls, readyFile: ready, home, webUrl: `http://127.0.0.1:${webPort}` }), { mode: 0o600 })
-    await chmod(join(root, 'fixture/ready.json'), 0o600)
+    await writeFile(join(root, 'fixture-server/ready.json'), JSON.stringify({ ...urls, readyFile: ready, home, webUrl: `http://127.0.0.1:${webPort}` }), { mode: 0o600 })
+    await chmod(join(root, 'fixture-server/ready.json'), 0o600)
     return { home, urls, ready, close, diagnostics }
   } catch (error) { await writeFile(join(home, 'failure.log'), diagnostics(), { mode: 0o600 }); await close(); throw Object.assign(error, { fixtureHome: home }) }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const fixture = await launchFixture()
-  console.log('Candidate fixture ready; private URLs and synthetic IDs: bridge/fixture/ready.json')
+  console.log('Candidate fixture ready; private URLs and synthetic IDs: companion/fixture-server/ready.json')
   if (process.argv.includes('--keep')) {
     let closing = false
     const stop = async () => { if (closing) return; closing = true; await fixture.close() }

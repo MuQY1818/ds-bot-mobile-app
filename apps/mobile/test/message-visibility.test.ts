@@ -11,7 +11,7 @@ import { createConversationStreamPool } from '../src/logic/conversation-streams.
 import { outgoingMessage, recoveredIntent } from '../src/logic/outgoing.ts';
 
 const require = createRequire(import.meta.url), ts = require('typescript');
-const { WebSocket, WebSocketServer } = require('../../../bridge/node_modules/ws');
+const { WebSocket, WebSocketServer } = require('../../../companion/node_modules/ws');
 
 // The actual hook and SDK run against an isolated HTTP/WS server. A small hook
 // host and clock replace React Native rendering, never a user's host/profile.

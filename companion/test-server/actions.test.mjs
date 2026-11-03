@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { Context, HostConnectionService, vanilla as install } from './inputs.mjs'
-import { createTeamActions, MOBILE_ACTIONS } from '../src/actions.mjs'
+import { createTeamActions, MOBILE_ACTIONS } from '../server/actions.mjs'
 async function fixture(t, options = {}) {
   const ctx = new Context(), calls = [], writes = []
   const connection = await ctx.plugin({ name: 'actions-connection', apply(ctx) { new HostConnectionService(ctx, [], { isAuthenticated: () => false }) } })
@@ -11,7 +11,7 @@ async function fixture(t, options = {}) {
   const no = () => {}
   const rt = { state, refresh: no, bootstrap: no, catalog: no, load: no, loadSecrets: no, readOnly: () => locked ? 'locked' : undefined,
     cachedCatalog: () => [{ ref: 'mock/model', name: 'Mock' }], cachedDefault: () => 'mock/model', chatOf: () => current,
-    secretsView: () => [], capabilityLibraryView: () => [], activityView: () => ({}), workView: () => ({}), roomWorkView: () => ({}), approvalsView: () => [], memoryNews: () => ({}), memoryReviews: () => [], connectorsView: () => [], capabilityStatusesView: () => ({}), noteFailure: no,
+    secretsView: () => [], learningView: () => ({}), archivesView: () => [], sessionOfRoom: room => room.id, save: async () => {}, capabilityLibraryView: () => [], activityView: () => ({}), workView: () => ({}), roomWorkView: () => ({}), approvalsView: () => [], memoryNews: () => ({}), memoryReviews: () => [], connectorsView: () => [], capabilityStatusesView: () => ({}), noteFailure: no,
     reasoningOf: async () => { await options.prepare?.(); return { efforts: [{ id: 'low', name: 'Low' }] } },
     updateBot: async (id, body) => { writes.push(body); return { id, secret: 'must-not-leave' } }, setFlags: async (id, body) => { writes.push(body); return { id, secret: 'must-not-leave' } },
     usageView: async () => ({ owners: [{ id: 'chief', kind: 'bot', name: 'synthetic-known' }, { id: 'other', kind: 'bot', name: 'foreign' }], models: [], kinds: ['chat'], rows: [['2026-01', 0, 0, 0, 1, 0, 0, 2, 1], ['2026-01', 1, 0, 0, 9, 0, 0, 9, 1]], now: '2026-01' }),

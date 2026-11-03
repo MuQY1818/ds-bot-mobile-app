@@ -7,7 +7,7 @@
 
 <p>
   <a href="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml"><img src="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml/badge.svg?branch=main" alt="CI checks on main"></a>
-  <a href="docs/status.md"><img src="https://img.shields.io/badge/source%20preview-0.1.7--preview.1-5879E8" alt="Source preview 0.1.7-preview.1"></a>
+  <a href="docs/status.md"><img src="https://img.shields.io/badge/source%20preview-0.1.7--preview.2-5879E8" alt="Source preview 0.1.7-preview.2"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-3D8B7D" alt="Apache License 2.0"></a>
 </p>
 
@@ -19,7 +19,7 @@
 
 ## A native interface for an existing team
 
-Connect to DS Bot already running in [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) on your computer, with your existing Bots, groups and conversations. The phone handles native navigation, reading and drafts. The desktop companion handles pairing approval and device management; the independent Bridge handles authentication and transport.
+Connect to DS Bot already running in [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) on your computer, with your existing Bots, groups and conversations. The phone handles native navigation, reading and drafts. The desktop App plugin handles pairing approval, device management, authentication and transport.
 
 | Conversations | Direct messages | Group chat |
 | :---: | :---: | :---: |
@@ -42,11 +42,11 @@ Connect to DS Bot already running in [DeepSeek Harness](https://github.com/deeps
   </tr>
   <tr>
     <td><strong>Room for the next draft</strong><br>Sending immediately creates a pending bubble and frees the composer. Uncertain or failed requests retain their content for status checks and explicit retries.</td>
-    <td><strong>Access per device</strong><br>The computer owner approves pairing and can revoke a device. The companion and Bridge have separate lifecycles; Bridge retains device authorization.</td>
+    <td><strong>Access per device</strong><br>The computer owner approves pairing and can revoke a device. Authorization lives in the App plugin's dedicated directory and survives disabling.</td>
   </tr>
 </table>
 
-Also included: English/Chinese interfaces, light and dark themes, character avatars, recent conversation caching and a return-to-latest button. Cached content and drafts remain available offline. Messaging requires the computer, Bridge and network; reconnecting does not automatically send drafts.
+Also included: English/Chinese interfaces, light and dark themes, character avatars, recent conversation caching and a return-to-latest button. Cached content and drafts remain available offline. Messaging requires the computer, the App plugin and network; reconnecting does not send drafts automatically.
 
 ### Current capabilities
 
@@ -57,36 +57,34 @@ Also included: English/Chinese interfaces, light and dark themes, character avat
 | Not provided yet | Token deltas, native tool approvals, media/voice transport, system push notifications and group administration |
 | Platforms | iOS / Android source preview; selected iPhone checks exist, Android device acceptance remains incomplete |
 
-A visible control does not establish Bridge support. See [status](docs/status.md) and the [capability and validation matrix](docs/validation.md) for the complete scope.
+A visible control does not establish App plugin support. See [status](docs/status.md) and the [capability and validation matrix](docs/validation.md) for the complete scope.
 
-## Three components, separate responsibilities
+## Two desktop plugins + the native App
 
 | Project | Runs on | Responsibility | Best fit |
 | --- | --- | --- | --- |
 | [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) | Computer DSH; accessed by a phone browser | Mobile Web interface, browser sign-in and history browsing | Users who want phone access immediately |
-| **Mobile App** · this repository | Native client on the phone; companion in computer DSH | Native interaction, drafts and cache; desktop pairing approval and device management | Developers able to build a native client |
-| [Mobile Bridge](https://github.com/MuQY1818/ds-bot-mobile-bridge) | Computer DSH | App device identity, HTTP/WS transport, capability adaptation and authorization storage | Native-client deployments |
+| **Mobile App** · this repository | Native client on the phone; companion in computer DSH | Native interaction, drafts and cache; desktop pairing approval, device management, authentication and transport | Developers able to build a native client |
 
-All three reuse an existing DSH / DS Bot team. Web, the App companion and Bridge are independently installed desktop plugins; the native App is a phone client. **Web requires neither App nor Bridge. The native App does not require Web.** Disabling the pairing interface does not revoke devices or stop Bridge. See [plugin responsibilities and lifecycle](docs/plugins.md).
+There are two desktop plugins, Web and App, both reusing an existing DSH / official DS Bot team with no patch. **Web does not require the App plugin; the native App does not require Web.** The former Mobile Bridge is merged into the App plugin since 0.3.0. See [plugin lifecycles](docs/plugins.md).
 
 ### Versions and deliverables
 
 | Deliverable | Current version | Distribution |
 | --- | --- | --- |
-| App source preview | `0.1.7-preview.1` | This repository and [releases](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.1) |
+| App source preview | `0.1.7-preview.2` | This repository and [releases](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.2) |
 | Native client | `0.1.7` | Build with your own platform toolchain; no public IPA/APK |
-| Desktop App companion | `0.2.0` | [`ds-bot-mobile-app-0.2.0.tgz`](https://github.com/MuQY1818/ds-bot-mobile-app/releases/download/v0.1.7-preview.1/ds-bot-mobile-app-0.2.0.tgz), installed in DSH |
-| Mobile Bridge | `0.0.6` | [Independent repository and release](https://github.com/MuQY1818/ds-bot-mobile-bridge/releases/tag/v0.0.6); desktop plugin archive |
+| Desktop App plugin | `0.3.0` | `ds-bot-mobile-app-0.3.0.tgz`, installed in DSH; includes the former Mobile Bridge |
 
-The local [`bridge/`](bridge/README.md) directory retains a `0.0.6` compatibility snapshot for existing builds, tests and historical package reproduction. Use the independent repository for the Bridge entry point and continued maintenance. Repository separation does not remove the local snapshot.
+Mobile Bridge is merged into App plugin 0.3.0 and no longer released separately; see [companion/README.md](companion/README.md) to migrate.
 
 ## Quick start
 
 ### 1. Prepare the computer
 
-Use an existing DSH / DS Bot team. Install and enable **Mobile Bridge** and the **App companion**, then configure a phone-accessible HTTPS endpoint with a trusted certificate. Follow [installation and pairing](docs/installation.md) for the full sequence.
+Use an existing DSH (0.2.1-rc.5+) and official DS Bot (0.2.6+) team. Install and enable the **App plugin**, then configure a phone-accessible HTTPS endpoint with a trusted certificate. Follow [installation and pairing](docs/installation.md).
 
-Bridge requires compatible DS Bot interfaces. Pristine npm DS Bot `0.1.7` does not supply them. App releases include the separately identified `ds-bot-0.1.7-codex.1.tgz` compatible package; an existing compatible installation does not need replacing. The installation guide covers compatibility and updates.
+App plugin 0.3.0 uses only public interfaces of pristine npm DS Bot `0.2.6`+; no patch or compatibility package is needed, and the `ds-bot-0.1.7-codex.1.tgz` from earlier releases is obsolete. The installation guide covers migrating from Bridge 0.0.x.
 
 ### 2. Build the native client
 

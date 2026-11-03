@@ -21,9 +21,9 @@ export async function launchFixture({ publishReady = true } = {}) {
   const area = join(root, 'fixture'); await mkdir(area, { recursive: true })
   const home = await mkdtemp(join(area, '.dsh-test-ui-'))
   await chmod(home, 0o700)
-  const profile = join(home, 'profiles/web'), deps = resolve(root, '../bridge/fixture/deps/node_modules')
+  const profile = join(home, 'profiles/web'), deps = resolve(root, 'fixture-server/deps/node_modules')
   const version = JSON.parse(await readFile(join(deps, '@deepseek-ai/dsh/package.json'), 'utf8')).version
-  if (version !== '0.2.1-rc.2') throw Error('Companion fixture requires public DSH 0.2.1-rc.2')
+  if (version !== '0.2.1-rc.5') throw Error('Companion fixture requires public DSH 0.2.1-rc.5; run npm run test:prepare')
   const children = [], env = { PATH: process.env.PATH, HOME: home, DSH_HOME: home, TMPDIR: process.env.TMPDIR ?? '/tmp', LANG: 'en_US.UTF-8' }
   let closing
   const diagnostics = () => children.map(item => `${item.label}\n${item.output()}`).join('\n')
@@ -49,11 +49,12 @@ export async function launchFixture({ publishReady = true } = {}) {
   try {
     await mkdir(join(profile, 'node_modules'), { recursive: true })
     await symlink(join(deps, '@deepseek-ai'), join(profile, 'node_modules/@deepseek-ai'))
-    await cp(resolve(root, '../bridge/fixture/extended/package'), join(profile, 'node_modules/ds-bot'), { recursive: true, filter: path => !path.includes('/node_modules') })
-    for (const [name, path] of [['ds-bot-mobile-app', root], ['ds-bot-mobile-bridge', resolve(root, '../bridge')]]) await symlink(path, join(profile, 'node_modules', name))
-    await writeFile(join(profile, 'package.json'), JSON.stringify({ name: 'companion-isolated-profile', private: true, dependencies: { 'ds-bot': '0.1.7', 'ds-bot-mobile-app': 'link:' + root, 'ds-bot-mobile-bridge': 'link:' + resolve(root, '../bridge') }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'ds-bot', 'ds-bot-mobile-bridge', 'ds-bot-mobile-app'] } } }))
+    await symlink(join(deps, 'deep-view'), join(profile, 'node_modules/deep-view'))
+    await cp(resolve(root, 'fixture-server/official/package'), join(profile, 'node_modules/ds-bot'), { recursive: true, filter: path => !path.includes('/node_modules') })
+    for (const [name, path] of [['ds-bot-mobile-app', root]]) await symlink(path, join(profile, 'node_modules', name))
+    await writeFile(join(profile, 'package.json'), JSON.stringify({ name: 'companion-isolated-profile', private: true, dependencies: { 'ds-bot': '0.2.6', 'ds-bot-mobile-app': 'link:' + root }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'ds-bot', 'ds-bot-mobile-app'] } } }))
     const webPort = await port(), bridgePort = await port(), mockPort = await port()
-    await writeFile(join(profile, 'cordis.patch.yml'), `- id: ds-bot-mobile-bridge\n  config:\n    enabled: true\n    home: ${JSON.stringify(join(home, 'bridge-home'))}\n    host: 127.0.0.1\n    port: ${bridgePort}\n    publicUrl: https://phone.example\n    devAllowInsecure: true\n    allowedOrigins: []\n`)
+    await writeFile(join(profile, 'cordis.patch.yml'), `- id: ds-bot-mobile-app\n  config:\n    enabled: true\n    home: ${JSON.stringify(join(home, 'bridge-home'))}\n    host: 127.0.0.1\n    port: ${bridgePort}\n    publicUrl: https://phone.example\n    devAllowInsecure: true\n    allowedOrigins: []\n`)
     start('mock', [resolve(root, '../ds-bot/dev/mock-llm.mjs')], { MOCK_PORT: String(mockPort), MOCK_LOG: join(home, 'mock.jsonl'), MOCK_DELAY_MS: '100', MOCK_JITTER_MS: '0' })
     const web = start('dsh', [join(deps, '@deepseek-ai/dsh/lib/bin.js'), '--profile', 'web', '--no-open', '--port', String(webPort)], { DEEPSEEK_BASE_URL: `http://127.0.0.1:${mockPort}/v1`, DEEPSEEK_API_KEY: 'ds-bot-test-mock-only' })
     let launch

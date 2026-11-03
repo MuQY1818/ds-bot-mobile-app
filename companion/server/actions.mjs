@@ -58,7 +58,8 @@ export function createTeamActions({ callTeam, snapshot, sessionController = {}, 
     const redacted = []
     for (let start = 0; start < texts.length; start += 100) {
       const batch = texts.slice(start, start + 100)
-      const result = await redactTexts({ conversationId: item.id, expectedSessionId: item.sessionId, texts: batch }, signal)
+      const result = await redactTexts({ conversationId: item.id, expectedSessionId: item.sessionId,
+        ...(item.kind === 'room' ? { expectedMembers: item.members } : {}), texts: batch }, signal)
       if (!Array.isArray(result) || result.length !== batch.length || result.some(text => typeof text !== 'string')) fail(503, 'REDACTION_FAILED', 'The DS Bot text redactor did not confirm the result.')
       redacted.push(...result)
     }

@@ -4,11 +4,10 @@
   "version": "0.1.7-preview.1",
   "license": "Apache-2.0",
   "scripts": {
-    "setup": "npm --prefix apps/mobile ci --ignore-scripts && npm --prefix bridge ci --ignore-scripts && npm --prefix companion ci --ignore-scripts",
-    "check": "npm --prefix apps/mobile run typecheck && npm --prefix apps/mobile test && npm --prefix packages/mobile-sdk test && npm --prefix bridge test && npm --prefix bridge run lint && npm --prefix companion run check && npm --prefix companion run build",
-    "check:bridge": "npm --prefix bridge run test:prepare && npm --prefix bridge run test:integration",
+    "setup": "npm --prefix apps/mobile ci --ignore-scripts && npm --prefix companion ci --ignore-scripts",
+    "check": "npm --prefix apps/mobile run typecheck && npm --prefix apps/mobile test && npm --prefix packages/mobile-sdk test && npm --prefix companion run check && npm --prefix companion run lint && npm --prefix companion run build",
+    "check:server": "npm --prefix companion run test:prepare && npm --prefix companion run test:integration",
     "audit": "python3 scripts/audit-source.py",
-    "pack:bridge": "node scripts/pack-bridge.mjs",
     "pack:companion": "node scripts/pack-companion.mjs",
     "preview:companion": "node companion/test/fixture.mjs",
     "check:companion": "npm --prefix companion run check && npm --prefix companion run build && npm --prefix companion run test:delivery"

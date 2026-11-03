@@ -1,68 +1,75 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { Context, HostConnectionService, extended, vanilla } from './inputs.mjs'
-import { mkdir, mkdtemp } from 'node:fs/promises'
+import { Context, HostConnectionService, extended } from './inputs.mjs'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { createAdapter } from '../src/adapter.mjs'
-import { createMobileServer } from '../src/server.js'
+import { createAdapter } from '../server/adapter.mjs'
+import { createMobileServer } from '../server/server.js'
 import { startBridge } from '../index.mjs'
 import { MobileClient, MemoryTokenStore } from '../../packages/mobile-sdk/index.js'
 const root = resolve(import.meta.dirname, '..')
 async function fixture(t, { install = extended, prepare = async () => {}, prompt = async () => ({ accepted: true }), fixtureText = false, catalog = [], secretBarrier = async () => {} } = {}) {
   const ctx = new Context()
+  const dsBotHome = await mkdtemp(`${tmpdir()}/ds-bot-group-test-`)
+  await writeFile(`${dsBotHome}/secrets.json`, JSON.stringify({ version: 1, secrets: [{ name: 'SYNTHETIC', value: 'synthetic-known-key' }] }))
+  t.after(() => rm(dsBotHome, { recursive: true, force: true }))
   const connectionFiber = await ctx.plugin({ name: 'connection-fixture', apply(ctx) { new HostConnectionService(ctx, [], { isAuthenticated: () => false }) } })
   t.after(() => connectionFiber.dispose())
   let current = 'current', readOnly
-  const state = { revision: 1, bots: { chief: { id: 'chief', name: 'Fixture Chief', segments: [{ sessionId: 'past' }] } }, rooms: { room: { id: 'room', name: 'Fixture group', members: ['chief'], admin: 'chief', mode: 'admin', sessions: { chief: 'hidden' }, log: [] } }, mainBotIds: ['chief'], agents: {}, questions: {}, exchangeTurns: { current: [77] }, prefs: {}, secretRequests: { FAKE_SECRET: 'must not leave state' } }
+  const state = { revision: 1, bots: { chief: { id: 'chief', name: 'Fixture Chief', segments: [{ sessionId: 'past' }] } }, rooms: { room: { id: 'room', name: 'Fixture group', members: ['chief'], admin: 'chief', mode: 'admin', sessions: { chief: 'hidden' }, log: [] } }, mainBotIds: ['chief'], agents: {}, questions: {}, views: {}, exchangeTurns: { current: [77] }, prefs: {}, secretRequests: { FAKE_SECRET: 'must not leave state' } }
   const no = () => {}
   const sessionController = { prompt, async *follow() { yield { type: 'snapshot', cursor: 9, records: [{ event: { type: 'user/message', seq: 1, data: { source: { kind: 'user' }, content: [{ type: 'text', text: 'hello password=synthetic' }] } } }, { event: { type: 'assistant/message', seq: 2, data: { message: { content: [{ type: 'text', text: 'synthetic-known-key' }] } } } }] }; }, page: async () => ({ records: [], cursor: 0 }) }
-  const rt = { state, refresh: no, load: no, bootstrap: no, catalog: no, loadSecrets: secretBarrier, cachedCatalog: () => catalog, cachedDefault: no, readOnly: () => readOnly,
-    chatOf: () => current, secretsView: () => [{ name: 'SYNTHETIC' }], capabilityLibraryView: () => [], activityView: () => ({}), workView: () => ({}), roomWorkView: () => ({}), approvalsView: () => [], memoryNews: () => ({}), memoryReviews: () => [], connectorsView: () => [], capabilityStatusesView: () => ({}), ensureCapabilities: prepare,
+  const rt = { state, home: dsBotHome, refresh: no, load: no, bootstrap: no, catalog: no, loadSecrets: secretBarrier, cachedCatalog: () => catalog, cachedDefault: no, readOnly: () => readOnly,
+    chatOf: () => current, botOf: id => state.bots[id], roomOf: id => state.rooms[id], sessionOfRoom: room => room.id, pastOwners: new Map(), groupOwners: new Map(),
+    archivesView: () => [], learningView: () => ({}), save: async () => {}, secretsView: () => [{ name: 'SYNTHETIC' }], capabilityLibraryView: () => [], activityView: () => ({}), workView: () => ({}), roomWorkView: () => ({}), approvalsView: () => [], memoryNews: () => ({}), memoryReviews: () => [], connectorsView: () => [], capabilityStatusesView: () => ({}), ensureCapabilities: prepare,
     redactSecrets: text => text.replaceAll('synthetic-known-key', '[redacted]'), noteFailure: no,
   }
   const fiber = await ctx.plugin({ name: 'upstream-fixture', inject: ['connection'], apply(ctx) { install({ ...rt, ctx: { effect: ctx.effect.bind(ctx), connection: ctx.connection, sessionController } }) } })
   t.after(() => fiber.dispose())
-  const adapter = createAdapter({ connection: ctx.connection, sessionController, fixtureText })
+  const adapter = createAdapter({ connection: ctx.connection, sessionController, dsBotHome, fixtureText })
   t.after(() => adapter.dispose())
   await adapter.initialize()
   return { ctx, adapter, sessionController, state, move: () => { current = 'next' }, lock: () => { readOnly = 'Held elsewhere' }, unload: () => fiber.dispose() }
 }
 const signal = () => AbortSignal.timeout(5000)
-test('vanilla 0.1.7 advertises reads accurately and refuses reliable send and raw history', async t => {
-  const f = await fixture(t, { install: vanilla })
+test('pristine DS Bot 0.2.6 supplies state/send while the bridge owns redaction and admission', async t => {
+  const f = await fixture(t)
   const caps = f.adapter.capabilities()
   assert.equal(caps.conversations, true)
-  for (const key of ['send', 'history', 'stream', 'groups', 'attachments', 'secrets']) assert.equal(caps[key], false)
-  await assert.rejects(f.adapter.history('chief', {}, signal()), { code: 'REDACTED_PROJECTION_REQUIRED' })
-  await assert.rejects(f.adapter.submit({ conversationId: 'chief' }, signal()), { code: 'STABLE_SUBMIT_REQUIRED' })
+  for (const key of ['send', 'history', 'stream', 'groups']) assert.equal(caps[key], true)
+  for (const key of ['attachments', 'secrets']) assert.equal(caps[key], false)
+  assert.equal((await f.adapter.history('chief', {}, signal())).messages[0].text, 'hello password=[redacted]')
+  await assert.rejects(f.adapter.submit({ conversationId: 'chief' }, signal()), { code: 'TARGET_CHANGED' })
   const view = await f.adapter.state(signal())
   assert.equal('secrets' in view, false); assert.equal('secretRequests' in view, false); assert.equal('hiddenTurns' in view, false)
-  assert.match(view.readOnly, /upstream bridge submit extension/)
+  assert.equal(view.readOnly, null)
   assert.deepEqual(view.models, [])
-  assert.equal(view.memory, false)
-  for (const key of ['modelSelection', 'queue', 'parts', 'search', 'context', 'tools', 'reasoning']) assert.equal(caps[key], false)
+  assert.equal(view.memory, true)
+  assert.equal(caps.modelSelection, true)
+  for (const key of ['queue', 'parts', 'search', 'context', 'tools', 'reasoning']) assert.equal(caps[key], false)
 })
-test('original SDK pairs and lists pristine upstream over HTTP while chat stays read-only', async t => {
-  const f = await fixture(t, { install: vanilla })
-  await mkdir(`${root}/fixture/test-homes`, { recursive: true })
-  const home = await mkdtemp(`${root}/fixture/test-homes/sdk-vanilla-`)
+test('original SDK pairs, reads history and submits through pristine DS Bot 0.2.6', async t => {
+  const f = await fixture(t)
+  await mkdir(`${root}/fixture-server/test-homes`, { recursive: true })
+  const home = await mkdtemp(`${root}/fixture-server/test-homes/sdk-vanilla-`)
   const server = await createMobileServer({ home, config: { port: 0, devAllowInsecure: true }, adapter: f.adapter })
   t.after(() => server.close())
   const client = new MobileClient({ baseUrl: server.url, allowInsecure: true, tokenStore: new MemoryTokenStore() })
   t.after(() => client.dispose())
   const info = await client.info()
-  assert.equal(info.capabilities.send, false); assert.equal(info.capabilities.history, false)
+  assert.equal(info.capabilities.send, true); assert.equal(info.capabilities.history, true)
   const pairing = await server.operator('pairing.create')
   const claim = await client.pair(pairing.code, 'SDK fixture')
   assert.equal((await client.completePairing(claim.claimToken)).status, 'pending')
   await server.operator('pairing.approve', { requestId: claim.requestId })
   await client.completePairing(claim.claimToken)
   const [state, list, target] = await Promise.all([client.state(), client.conversations(), client.target('chief')])
-  assert.match(state.readOnly, /upstream bridge submit extension/)
+  assert.equal(state.readOnly, null)
   assert.equal(list.conversations[0].id, 'chief')
   assert.deepEqual(target, { conversationId: 'chief', sessionId: 'current', revision: 1, kind: 'bot' })
-  await assert.rejects(client.messages('chief'), { code: 'REDACTED_PROJECTION_REQUIRED', status: 501 })
-  await assert.rejects(client.submit({ conversationId: 'chief', sessionId: 'current', requestId: 'sdk_vanilla', text: 'hello' }), { code: 'STABLE_SUBMIT_REQUIRED', status: 501 })
+  assert.equal((await client.messages('chief')).messages[0].text, 'hello password=[redacted]')
+  assert.equal((await client.submit({ conversationId: 'chief', sessionId: 'current', requestId: 'sdk_vanilla', text: 'hello' })).accepted, true)
   await assert.rejects(client.action('queue', { conversationId: 'chief' }), { code: 'ACTION_NOT_ALLOWED', status: 403 })
 })
 test('App bootstrap projects only safe model and Bot display fields', async t => {
@@ -94,24 +101,27 @@ test('committed message and turn status schema matches the original App consumer
   assert.deepEqual(frames[2].message, { id: 'current:3', sessionId: 'current', seq: 3, createdAt: 0, role: 'assistant', text: 'hello' })
   assert.equal(JSON.stringify(frames).includes('private thought'), false)
 })
-test('unknown or malformed extension descriptions cannot advertise transcript or sending', async t => {
-  for (const description of [null, {}, { version: 2, redactedText: true, stableRequestId: true }]) {
-    const adapter = createAdapter({ connection: { createSharedFetchHandler: () => ({ fetch: async request => {
-      const { endpoint } = await request.json()
-      return Response.json({ ok: true, value: endpoint === 'state' ? { bots: [], rooms: [] } : description })
-    } }) }, sessionController: {} })
-    t.after(() => adapter.dispose())
-    await adapter.initialize()
-    for (const key of ['send', 'history', 'stream']) assert.equal(adapter.capabilities()[key], false)
-    await assert.rejects(adapter.history('chief', {}, signal()), { code: 'REDACTED_PROJECTION_REQUIRED' })
-    assert.match((await adapter.state(signal())).readOnly, /upstream bridge submit extension/)
-  }
+test('official state failure is surfaced without requesting bridge endpoints', async t => {
+  const home = await mkdtemp(`${tmpdir()}/ds-bot-state-failure-`)
+  t.after(() => rm(home, { recursive: true, force: true }))
+  const calls = []
+  const adapter = createAdapter({ dsBotHome: home, connection: { createSharedFetchHandler: () => ({ fetch: async request => {
+    const { endpoint } = await request.json()
+    calls.push(endpoint)
+    return Response.json({ ok: false, error: { code: 'bot/unavailable' } })
+  } }) }, sessionController: {} })
+  t.after(() => adapter.dispose())
+  await assert.rejects(adapter.initialize(), { code: 'bot/unavailable' })
+  assert.deepEqual(calls, ['state'])
+  for (const key of ['send', 'history', 'stream']) assert.equal(adapter.capabilities()[key], false)
+  await assert.rejects(adapter.state(signal()), { code: 'bot/unavailable' })
+  assert.deepEqual(calls, ['state', 'state'])
 })
-test('extended upstream redacts known key values and labels without exposing tools or secrets', async t => {
+test('in-process redactor masks known key values and labels without exposing tools or secrets', async t => {
   const f = await fixture(t)
   const page = await f.adapter.history('chief', {}, signal())
   assert.equal(page.messages[0].text, 'hello password=[redacted]')
-  assert.equal(page.messages[1].text, '[redacted]')
+  assert.equal(page.messages[1].text, '[secret:SYNTHETIC]')
   assert.equal(page.cursor !== null, true)
   assert.equal(JSON.stringify(page).includes('synthetic-known-key'), false)
 })
@@ -125,25 +135,28 @@ test('cursor cannot cross conversations, unrelated Sessions or hidden group memb
   await assert.rejects(f.adapter.history('chief', { cursor }, signal()), { code: 'INVALID_CURSOR' })
   assert.equal((await f.adapter.target('room', signal())).sessionId, 'room')
 })
-test('submit forwards stable caller identity only through existing DS Bot owned handler', async t => {
+test('submit forwards the stable caller request ID to the verified Session', async t => {
   const prompts = []
   const f = await fixture(t, { prompt: async value => { prompts.push(value); return { accepted: true } } })
   const result = await f.adapter.submit({ conversationId: 'chief', sessionId: 'current', requestId: 'device_client', text: 'hello' }, signal())
   assert.equal(result.accepted, true)
+  assert.equal(prompts.length, 1)
   assert.deepEqual(prompts, [{ requestId: 'device_client', sessionId: 'current', mode: 'queue', content: [{ type: 'text', text: 'hello' }] }])
   await assert.rejects(f.adapter.submit({ conversationId: 'chief', sessionId: 'past', requestId: 'device_other', text: 'hello' }, signal()), { code: 'TARGET_CHANGED' })
   await assert.rejects(f.adapter.submit({ conversationId: 'chief', sessionId: 'current', requestId: 'device_ref', text: 'dsh-session:other' }, signal()), { code: 'INVALID_CONTENT' })
 })
-test('DS Bot patch rechecks rollover after the capability preparation barrier', async t => {
-  let f, prompted = false
-  f = await fixture(t, { prepare: async () => f.move(), prompt: async () => { prompted = true; return { accepted: true } } })
-  await assert.rejects(f.adapter.submit({ conversationId: 'chief', sessionId: 'current', requestId: 'device_1', text: 'hello' }, signal()), { code: 'bot/stale' })
+test('bridge refuses a Bot Session that rolled over before submit', async t => {
+  let prompted = false
+  const f = await fixture(t, { prompt: async () => { prompted = true; return { accepted: true } } })
+  f.move()
+  await assert.rejects(f.adapter.submit({ conversationId: 'chief', sessionId: 'current', requestId: 'device_1', text: 'hello' }, signal()), { code: 'TARGET_CHANGED' })
   assert.equal(prompted, false)
 })
-test('DS Bot patch rechecks team write ownership after capability preparation', async t => {
-  let f, prompted = false
-  f = await fixture(t, { prepare: async () => f.lock(), prompt: async () => { prompted = true; return { accepted: true } } })
-  await assert.rejects(f.adapter.submit({ conversationId: 'chief', sessionId: 'current', requestId: 'device_1', text: 'hello' }, signal()), { code: 'bot/read-only' })
+test('bridge refuses a read-only team before send', async t => {
+  let prompted = false
+  const f = await fixture(t, { prompt: async () => { prompted = true; return { accepted: true } } })
+  f.lock()
+  await assert.rejects(f.adapter.submit({ conversationId: 'chief', sessionId: 'current', requestId: 'device_1', text: 'hello' }, signal()), { code: 'TARGET_CHANGED' })
   assert.equal(prompted, false)
 })
 test('route unload fails closed and Peer resources dispose once', async t => {
@@ -152,18 +165,20 @@ test('route unload fails closed and Peer resources dispose once', async t => {
   await assert.rejects(f.adapter.state(signal()), { code: 'TEAM_UNAVAILABLE' })
   let disposed = 0
   const peer = { principal: { kind: 'owner' }, dispose() { disposed++ } }
-  const adapter = createAdapter({ connection: { createPeer: () => peer, createSharedFetchHandler: () => ({ fetch: async (_request, actual) => { assert.equal(actual, peer); return Response.json({ ok: true, value: {} }) } }) }, sessionController: {} })
+  const home = await mkdtemp(`${tmpdir()}/ds-bot-dispose-`)
+  t.after(() => rm(home, { recursive: true, force: true }))
+  const adapter = createAdapter({ dsBotHome: home, connection: { createPeer: () => peer, createSharedFetchHandler: () => ({ fetch: async (_request, actual) => { assert.equal(actual, peer); return Response.json({ ok: true, value: {} }) } }) }, sessionController: {} })
   await adapter.dispose(); await adapter.dispose(); assert.equal(disposed, 1)
 })
 test('production entry requires a separate explicit state home', async () => {
   await assert.rejects(startBridge({}, {}), /dedicated bridge home/)
   const old = process.env.DSH_HOME
-  process.env.DSH_HOME = `${root}/fixture/.dsh-test-home`
+  process.env.DSH_HOME = `${root}/fixture-server/.dsh-test-home`
   try { await assert.rejects(startBridge({}, { home: process.env.DSH_HOME }), /separate from DSH_HOME/) } finally { if (old === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = old }
 })
 test('HTTP ledger preserves uncertain receipts across restart without replaying', async t => {
-  await mkdir(`${root}/fixture/test-homes`, { recursive: true })
-  const home = await mkdtemp(`${root}/fixture/test-homes/receipt-`)
+  await mkdir(`${root}/fixture-server/test-homes`, { recursive: true })
+  const home = await mkdtemp(`${root}/fixture-server/test-homes/receipt-`)
   let prompts = 0
   const adapter = { capabilities: () => ({ send: true }), async submit() { prompts++; throw Error('Connection lost after admission') }, dispose() {} }
   const config = { port: 0, devAllowInsecure: true }
@@ -199,10 +214,11 @@ test('group submit preserves request ID and reuses prompt on public room Session
   await f.adapter.submit({ conversationId: 'room', sessionId: 'room', requestId: 'group_stable', text: 'hello group' }, signal())
   assert.deepEqual(prompts, [{ requestId: 'group_stable', sessionId: 'room', mode: 'queue', content: [{ type: 'text', text: 'hello group' }] }])
 })
-test('group submit rechecks membership, admin, mode, room deletion and lock after barrier', async t => {
-  for (const change of [f => f.state.rooms.room.members.push('new'), f => { f.state.rooms.room.admin = null }, f => { f.state.rooms.room.mode = 'everyone' }, f => { delete f.state.rooms.room }, f => f.lock()]) {
-    let f, prompted = false
-    f = await fixture(t, { prepare: async () => change(f), prompt: async () => { prompted = true; return { accepted: true } } })
+test('group submit refuses changed membership, a deleted room or a read-only team before send', async t => {
+  for (const change of [f => f.state.rooms.room.members.push('new'), f => { delete f.state.rooms.room }, f => f.lock()]) {
+    let prompted = false
+    const f = await fixture(t, { prompt: async () => { prompted = true; return { accepted: true } } })
+    change(f)
     await assert.rejects(f.adapter.submit({ conversationId: 'room', sessionId: 'room', requestId: 'group_changed', text: 'hello' }, signal()))
     assert.equal(prompted, false)
   }
@@ -214,8 +230,8 @@ test('group history redacts text and author names and rejects member Session cur
     { event: { type: 'tool/result', seq: 2, data: { message: { source: { callId: 'relay' }, content: [{ type: 'text', text: JSON.stringify({ replies: [{ botId: 'chief', name: 'synthetic-known-key', text: 'synthetic-known-key' }] }) }] } } } },
   ] } }
   const page = await f.adapter.history('room', {}, signal())
-  assert.equal(page.messages[0].text, '[redacted]')
-  assert.deepEqual(page.messages[0].author, { id: 'chief', name: '[redacted]' })
+  assert.equal(page.messages[0].text, '[secret:SYNTHETIC]')
+  assert.deepEqual(page.messages[0].author, { id: 'chief', name: '[secret:SYNTHETIC]' })
   const cursor = Buffer.from(JSON.stringify({ v: 1, conversationId: 'room', sessionId: 'hidden' })).toString('base64url')
   await assert.rejects(f.adapter.history('room', { cursor }, signal()), { code: 'SESSION_DENIED' })
 })
@@ -230,8 +246,8 @@ test('group live frames retain relay call attribution and redact author metadata
   const frames = []
   for await (const frame of f.adapter.follow('room', {}, signal())) frames.push(frame)
   assert.deepEqual(frames.map(frame => frame.type), ['reset', 'message'])
-  assert.equal(frames[1].message.text, '[redacted]')
-  assert.equal(frames[1].message.author.name, '[redacted]')
+  assert.equal(frames[1].message.text, '[secret:SYNTHETIC]')
+  assert.equal(frames[1].message.author.name, '[secret:SYNTHETIC]')
 })
 test('group redaction refuses membership changed while loading known secret values', async t => {
   let f, armed = false, count = 0

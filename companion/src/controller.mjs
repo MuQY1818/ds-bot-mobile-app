@@ -32,7 +32,7 @@ export function createDeviceController({ call, now = Date.now }) {
       if (disposed || issued !== generation) return
       if (method === 'pairing.create') {
         const url = new URL(value.url)
-        if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || !value.code || !value.serverId || !(value.expiresAt > now())) throw Error('Bridge returned invalid HTTPS pairing data.')
+        if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || !value.code || !value.serverId || !(value.expiresAt > now())) throw Error('The App connection returned invalid HTTPS pairing data.')
         emit({ pairing: { url: value.url, code: value.code, serverId: value.serverId, expiresAt: value.expiresAt } })
       }
       emit({ confirmRevoke: null })

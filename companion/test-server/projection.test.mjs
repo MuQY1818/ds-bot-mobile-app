@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { projectGroupRecords } from '../src/group-projection.mjs'
+import { projectGroupRecords } from '../server/group-projection.mjs'
 const text = value => [{ type: 'text', text: value }]
 const event = (type, seq, data) => ({ event: { type, seq, data } })
 const call = event('tool/call', 1, { callId: 'relay', name: 'group_relay' })
