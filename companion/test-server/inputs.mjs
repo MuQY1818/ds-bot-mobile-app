@@ -1,8 +1,8 @@
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 const root = resolve(import.meta.dirname, '..')
-const deps = resolve(process.env.BRIDGE_TEST_DEPS ?? join(root, 'fixture/deps/node_modules'))
-const vanilla = join(root, 'fixture/official/package')
+const deps = resolve(process.env.BRIDGE_TEST_DEPS ?? join(root, 'fixture-server/deps/node_modules'))
+const vanilla = join(root, 'fixture-server/official/package')
 const extended = vanilla
 const load = path => import(pathToFileURL(path).href)
 export const { Context } = await load(join(deps, '@deepseek-ai/cordis/lib/index.js'))

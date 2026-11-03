@@ -28,7 +28,7 @@ test('approval is explicit and revocation requires the selected confirmation', a
   c.confirmRevoke('device-one'); await c.revoke('device-one')
   assert.ok(calls.some(([method,payload]) => method === 'device.revoke' && payload.id === 'device-one'))
 })
-test('disabled or unavailable bridge removes the displayed pairing', async () => {
+test('disabled or unavailable App connection removes the displayed pairing', async () => {
   let available = true
   const c = createDeviceController({ call: async method => method === 'pairing.create' ? { url: 'https://phone.example', code: 'example', serverId: 'example-server', expiresAt: Date.now()+1000 } : available ? ready : { enabled:false } })
   await c.create(); available=false; await c.refresh(); assert.equal(c.snapshot().pairing,null)
@@ -41,10 +41,10 @@ test('owner client preserves same-origin carrier and refuses mismatched RPC resp
   const bad=createOperatorClient({root:'https://host.example/',location:undefined,uuid:()=> 'one',fetchImpl:async()=>({ok:true,json:async()=>({type:'server-response',rpcId:'other',result:{ok:true,value:ready}})})})
   await assert.rejects(bad('status'))
 })
-test('missing Bridge yields actionable setup error and no privileged fallback', async () => {
+test('disabled App connection yields actionable setup error and no privileged fallback', async () => {
   for (const status of [404, 405]) {
     const call=createOperatorClient({root:'https://host.example/',location:undefined,fetchImpl:async()=>({ok:false,status})})
-    await assert.rejects(call('status'),error=>error.code===`HTTP_${status}` && error.message.includes('Install and configure'))
+    await assert.rejects(call('status'),error=>error.code===`HTTP_${status}` && error.message.includes('plugin settings'))
     await assert.rejects(call('unknown'))
   }
 })

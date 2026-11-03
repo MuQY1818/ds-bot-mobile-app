@@ -26,3 +26,4 @@ DerivedData/
 __pycache__/
 *.pyc
 *.tsbuildinfo
+fixture-server/

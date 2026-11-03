@@ -1,8 +1,8 @@
 {
   "name": "ds-bot-mobile-app",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "DS Bot Mobile App \u2014 desktop pairing and device management companion",
+  "description": "DS Bot Mobile App — native App connection, secure pairing and device management for an existing DS Bot team",
   "license": "Apache-2.0",
   "type": "module",
   "main": "index.mjs",
@@ -22,19 +22,39 @@
     "index.mjs",
     "client.js",
     "cordis.patch.yml",
+    "cordis.patch.example.yml",
+    "config.schema.json",
+    "COMPATIBILITY.md",
     "README.md",
     "LICENSE",
-    "NOTICE"
+    "NOTICE",
+    "server/actions.mjs",
+    "server/adapter.mjs",
+    "server/auth.js",
+    "server/config.mjs",
+    "server/group-projection.mjs",
+    "server/operator.mjs",
+    "server/project-avatar.mjs",
+    "server/projection.js",
+    "server/server.js",
+    "server/team-contract.mjs",
+    "server/redactor.mjs"
   ],
   "scripts": {
     "build": "node build.mjs",
-    "check": "node --test test/*.test.mjs",
+    "check": "node --test test/*.test.mjs test-server/*.test.mjs",
+    "test": "node --test test/*.test.mjs test-server/*.test.mjs",
+    "lint": "oxlint --deny-warnings index.mjs server test-server",
+    "test:prepare": "node test-server/prepare.mjs",
+    "test:integration": "node test-server/integration.mjs",
     "test:delivery": "node test/delivery.mjs",
-    "fixture": "node test/fixture.mjs"
+    "fixture": "node test/fixture.mjs",
+    "fixture:server": "node test-server/fixture-host.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
-    "qrcode": "1.5.4"
+    "qrcode": "1.5.4",
+    "oxlint": "1.76.0"
   },
   "homepage": "https://github.com/MuQY1818/ds-bot-mobile-app",
   "repository": {
@@ -44,5 +64,14 @@
   },
   "engines": {
     "node": ">=24"
+  },
+  "dependencies": {
+    "ws": "8.18.3"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
+  "bugs": {
+    "url": "https://github.com/MuQY1818/ds-bot-mobile-app/issues"
   }
 }

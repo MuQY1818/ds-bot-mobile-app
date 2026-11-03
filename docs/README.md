@@ -10,10 +10,10 @@
 | --- | --- |
 | 判断是否适合使用 | [常见问题](faq.md) → [当前状态](status.md) |
 | 第一次安装原生 App | [安装与配对](installation.md) → [原生客户端构建](../apps/mobile/README.md) → [使用指南](usage.md) |
-| 部署和维护电脑端 | [插件职责](plugins.md) → [Bridge 配置](bridge.md) → [故障排查](troubleshooting.md) |
+| 部署和维护电脑端 | [插件职责](plugins.md) → [App 连接配置](bridge.md) → [故障排查](troubleshooting.md) |
 | 升级已有部署 | [安装指南：更新与保留数据](installation.md#更新与保留数据) → [更新记录](../CHANGELOG.md) |
 | 参与客户端或配套插件开发 | [开发与检查](development.md) → [交互设计](design.md) → [验证记录](validation.md) |
-| 开发 Bridge 或使用接口 | [独立 Bridge 仓库](https://github.com/MuQY1818/ds-bot-mobile-bridge) → [所有者接口](bridge-api.md) → [Mobile SDK](../packages/mobile-sdk/README.md) |
+| 开发电脑端或使用接口 | [App 插件](../companion/README.md) → [所有者接口](bridge-api.md) → [Mobile SDK](../packages/mobile-sdk/README.md) |
 
 ## 文档目录
 
@@ -23,9 +23,9 @@
 | [使用指南](usage.md) | 会话历史、草稿、发送状态、局部选字与设备管理 |
 | [常见问题](faq.md) | Web / App 选择、组件区别、能力和平台范围 |
 | [故障排查](troubleshooting.md) | 连接服务未就绪、二维码、未知发送与升级问题 |
-| [插件职责与生命周期](plugins.md) | 三个独立插件、共享手机访问入口与启停语义 |
-| [Bridge 配置](bridge.md) | 认证与传输插件的部署、状态目录和维护 |
-| [所有者接口](bridge-api.md) | 电脑配套界面与 Bridge 的所有者操作协议 |
+| [插件职责与生命周期](plugins.md) | 两个电脑插件（Web / App）、共享手机访问入口与启停语义 |
+| [App 连接配置](bridge.md) | App 插件的认证与传输部署、状态目录和维护 |
+| [所有者接口](bridge-api.md) | 电脑端界面与 App 连接服务的所有者操作协议 |
 | [原生客户端构建](../apps/mobile/README.md) | Expo 开发构建、签名、平台工具链和设计预览 |
 | [开发与检查](development.md) | 独立 fixture、工程检查、插件构建与交付 |
 | [交互设计](design.md) | 会话布局、原生与 Web 预览的不同验证范围 |
@@ -39,10 +39,9 @@
 | 组件 | 版本 | 入口 |
 | --- | --- | --- |
 | 原生 App / 源码预览 | `0.1.7` / `0.1.7-preview.1` | [App 发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.1) |
-| 电脑端 App 配套插件 | `0.2.0` | 与 App 源码预览一起提供 `.tgz` |
-| Mobile Bridge | `0.0.6` | [独立仓库发布](https://github.com/MuQY1818/ds-bot-mobile-bridge/releases/tag/v0.0.6) |
+| 电脑端 App 插件 | `0.3.0` | 含原 Mobile Bridge |
 
-本仓库 `bridge/` 是保留的兼容快照，供当前 App 构建和测试复现；后续 Bridge 开发从独立仓库进入。App、配套插件与 Bridge 独立版本化，更新一个组件不表示其他组件已经更新。
+Mobile Bridge 已并入 App 插件 0.3.0（`companion/`），不再有独立 `bridge/` 目录或单独发布。原生 App 与电脑端 App 插件独立版本化。
 
 历史变化见 [CHANGELOG](../CHANGELOG.md)；各次源码预览说明保留于 [0.1.7](releases/v0.1.7-preview.1.md)、[0.1.6](releases/v0.1.6-preview.1.md)、[0.1.5](releases/v0.1.5-preview.1.md) 和 [0.1.4](releases/v0.1.4-preview.1.md)。旧版本记录描述的是当次交付，不代表当前支持范围。
 

@@ -4,8 +4,8 @@ import { Context, HostConnectionService, extended } from './inputs.mjs'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { createAdapter } from '../src/adapter.mjs'
-import { createMobileServer } from '../src/server.js'
+import { createAdapter } from '../server/adapter.mjs'
+import { createMobileServer } from '../server/server.js'
 import { startBridge } from '../index.mjs'
 import { MobileClient, MemoryTokenStore } from '../../packages/mobile-sdk/index.js'
 const root = resolve(import.meta.dirname, '..')
@@ -51,8 +51,8 @@ test('pristine DS Bot 0.2.6 supplies state/send while the bridge owns redaction 
 })
 test('original SDK pairs, reads history and submits through pristine DS Bot 0.2.6', async t => {
   const f = await fixture(t)
-  await mkdir(`${root}/fixture/test-homes`, { recursive: true })
-  const home = await mkdtemp(`${root}/fixture/test-homes/sdk-vanilla-`)
+  await mkdir(`${root}/fixture-server/test-homes`, { recursive: true })
+  const home = await mkdtemp(`${root}/fixture-server/test-homes/sdk-vanilla-`)
   const server = await createMobileServer({ home, config: { port: 0, devAllowInsecure: true }, adapter: f.adapter })
   t.after(() => server.close())
   const client = new MobileClient({ baseUrl: server.url, allowInsecure: true, tokenStore: new MemoryTokenStore() })
@@ -173,12 +173,12 @@ test('route unload fails closed and Peer resources dispose once', async t => {
 test('production entry requires a separate explicit state home', async () => {
   await assert.rejects(startBridge({}, {}), /dedicated bridge home/)
   const old = process.env.DSH_HOME
-  process.env.DSH_HOME = `${root}/fixture/.dsh-test-home`
+  process.env.DSH_HOME = `${root}/fixture-server/.dsh-test-home`
   try { await assert.rejects(startBridge({}, { home: process.env.DSH_HOME }), /separate from DSH_HOME/) } finally { if (old === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = old }
 })
 test('HTTP ledger preserves uncertain receipts across restart without replaying', async t => {
-  await mkdir(`${root}/fixture/test-homes`, { recursive: true })
-  const home = await mkdtemp(`${root}/fixture/test-homes/receipt-`)
+  await mkdir(`${root}/fixture-server/test-homes`, { recursive: true })
+  const home = await mkdtemp(`${root}/fixture-server/test-homes/receipt-`)
   let prompts = 0
   const adapter = { capabilities: () => ({ send: true }), async submit() { prompts++; throw Error('Connection lost after admission') }, dispose() {} }
   const config = { port: 0, devAllowInsecure: true }

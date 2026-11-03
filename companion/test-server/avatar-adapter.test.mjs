@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { createAdapter } from '../src/adapter.mjs'
+import { createAdapter } from '../server/adapter.mjs'
 test('real candidate adapter carries avatars through both state and conversations', async () => {
   const dsBotHome = await mkdtemp(`${tmpdir()}/ds-bot-avatar-`)
   const fixture = { revision:1, rooms:[], models:[], mainBotIds:['fixture-chief'], bots:[

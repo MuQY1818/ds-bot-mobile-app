@@ -19,7 +19,7 @@
 
 ## 已有团队的原生入口
 
-连接电脑上已经运行的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）和 DS Bot，保留原有 Bot、群聊和会话。手机提供原生导航、消息阅读与草稿体验；电脑端配套插件负责配对批准和设备管理，独立 Bridge 负责认证与传输。
+连接电脑上已经运行的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）和 DS Bot，保留原有 Bot、群聊和会话。手机提供原生导航、消息阅读与草稿体验；电脑端 App 插件负责配对批准、设备管理、认证与传输。
 
 | 会话列表 | 单聊 | 群聊 |
 | :---: | :---: | :---: |
@@ -42,11 +42,11 @@
   </tr>
   <tr>
     <td><strong>继续写下一条草稿</strong><br>发送后立即显示待确认气泡，输入框留给新草稿。未知或失败的发送保留原内容，供检查与手动重试。</td>
-    <td><strong>每台设备单独授权</strong><br>电脑所有者批准配对，按设备撤销访问。配套界面与 Bridge 独立启停，授权由 Bridge 保存。</td>
+    <td><strong>每台设备单独授权</strong><br>电脑所有者批准配对，按设备撤销访问。授权保存在 App 插件的专用目录，停用插件不会丢失。</td>
   </tr>
 </table>
 
-还有中英文界面、明暗主题、角色头像、近期会话缓存和回到最新消息的快捷按钮。离线时可阅读已有缓存和编辑草稿；收发仍需要电脑、Bridge 与网络可用，恢复网络不会自动发送草稿。
+还有中英文界面、明暗主题、角色头像、近期会话缓存和回到最新消息的快捷按钮。离线时可阅读已有缓存和编辑草稿；收发仍需要电脑、App 插件与网络可用，恢复网络不会自动发送草稿。
 
 ### 当前能力
 
@@ -57,17 +57,16 @@
 | 尚未提供 | 逐 token 增量、原生工具审批、媒体/语音传输、系统推送通知、群管理 |
 | 平台状态 | iOS / Android 源码预览；已有部分 iPhone 验证，Android 真机验收尚未完成 |
 
-界面中存在某个控件，不代表当前 Bridge 支持相应功能。完整范围见[状态说明](docs/status.md)和[能力与验证矩阵](docs/validation.md)。
+界面中存在某个控件，不代表当前 App 插件支持相应功能。完整范围见[状态说明](docs/status.md)和[能力与验证矩阵](docs/validation.md)。
 
-## 三个组件，各有职责
+## 两个电脑插件 + 原生 App
 
 | 项目 | 安装位置 | 职责 | 适合谁 |
 | --- | --- | --- | --- |
 | [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web) | 电脑 DSH；手机浏览器访问 | 移动 Web 界面、浏览器登录与历史浏览 | 希望直接在手机使用的用户 |
-| **Mobile App** · 本仓库 | 原生客户端在手机；配套插件在电脑 DSH | 原生交互、草稿与缓存；电脑上的配对批准和设备管理 | 能够自行构建原生客户端的开发者 |
-| [Mobile Bridge](https://github.com/MuQY1818/ds-bot-mobile-bridge) | 电脑 DSH | App 设备身份、HTTP/WS 传输、能力适配与授权存储 | 需要连接原生客户端的部署者 |
+| **Mobile App** · 本仓库 | 原生客户端在手机；配套插件在电脑 DSH | 原生交互、草稿与缓存；电脑上的配对批准、设备管理、认证与传输 | 能够自行构建原生客户端的开发者 |
 
-三者复用已有 DSH / DS Bot 团队。Web、App 配套插件和 Bridge 是可分别安装、启停的电脑插件；原生 App 是手机客户端。**只用 Web 无需安装 App 或 Bridge；原生 App 无需安装 Web。** 停用 App 配对界面不会自动撤销手机或停止 Bridge。详见[插件职责与生命周期](docs/plugins.md)。
+电脑端只有两个插件：Web 与 App，均复用已有 DSH / 官方 DS Bot 团队（无需补丁）。**只用 Web 无需安装 App 插件；原生 App 无需安装 Web。** 原独立的 Mobile Bridge 自 App 插件 0.3.0 起并入 App 插件。详见[插件职责与生命周期](docs/plugins.md)。
 
 ### 版本与交付
 
@@ -75,16 +74,15 @@
 | --- | --- | --- |
 | App 源码预览 | `0.1.7-preview.1` | 本仓库与[发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.1) |
 | 原生客户端 | `0.1.7` | 使用自己的平台工具链构建；无公开 IPA/APK |
-| 电脑端 App 配套插件 | `0.2.0` | [`ds-bot-mobile-app-0.2.0.tgz`](https://github.com/MuQY1818/ds-bot-mobile-app/releases/download/v0.1.7-preview.1/ds-bot-mobile-app-0.2.0.tgz)，安装到 DSH |
-| Mobile Bridge | `0.0.6` | [独立仓库与发布](https://github.com/MuQY1818/ds-bot-mobile-bridge/releases/tag/v0.0.6)；电脑端插件包 |
+| 电脑端 App 插件 | `0.3.0` | `ds-bot-mobile-app-0.3.0.tgz`，安装到 DSH；包含原 Mobile Bridge |
 
-本仓库的 [`bridge/`](bridge/README.zh.md) 保留 `0.0.6` 兼容源码快照，用于已有构建、测试和历史交付复现。Bridge 的独立入口和后续维护见新仓库；本地快照继续保留，不因仓库拆分而移除。
+Mobile Bridge 已并入 App 插件 0.3.0，不再单独发布；从旧版迁移见 [companion/README.md](companion/README.md)。
 
 ## 快速开始
 
 ### 1. 准备电脑端
 
-准备已有 DSH / DS Bot 团队，安装并启用 **Mobile Bridge** 和 **App 配套插件**，为 Bridge 配置手机可达、证书可信的 HTTPS 入口。完整步骤见[安装与配对](docs/installation.md)。
+准备已有 DSH（0.2.1-rc.5+）与官方 DS Bot（0.2.6+）团队，安装并启用 **App 插件**，配置手机可达、证书可信的 HTTPS 入口。完整步骤见[安装与配对](docs/installation.md)。
 
 Bridge 需要兼容的 DS Bot 接口。原版 npm DS Bot `0.1.7` 不满足此要求；App 发布页另有明确标识的 `ds-bot-0.1.7-codex.1.tgz` 兼容包。已有兼容版本无需重复替换，安装顺序与升级要求见安装指南。
 

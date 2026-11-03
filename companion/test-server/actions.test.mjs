@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { Context, HostConnectionService, vanilla as install } from './inputs.mjs'
-import { createTeamActions, MOBILE_ACTIONS } from '../src/actions.mjs'
+import { createTeamActions, MOBILE_ACTIONS } from '../server/actions.mjs'
 async function fixture(t, options = {}) {
   const ctx = new Context(), calls = [], writes = []
   const connection = await ctx.plugin({ name: 'actions-connection', apply(ctx) { new HostConnectionService(ctx, [], { isAuthenticated: () => false }) } })

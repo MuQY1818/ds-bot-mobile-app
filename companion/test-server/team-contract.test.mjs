@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { createTeamContract } from '../src/team-contract.mjs'
+import { createTeamContract } from '../server/team-contract.mjs'
 
 const botState = () => ({ bots: [{ id: 'bot-1', sessionId: 'chat-1' }], rooms: [] })
 const roomState = () => ({ bots: [{ id: 'bot-1', sessionId: 'chat-1' }, { id: 'bot-2', sessionId: 'chat-2' }], rooms: [{ id: 'room-1', sessionId: 'room-session-1', members: ['bot-1', 'bot-2'] }] })
@@ -138,6 +138,6 @@ test('redactor source contains no runtime secret value after use', async t => {
   const { contract, dsBotHome } = await fixture(t)
   await writeFile(join(dsBotHome, 'secrets.json'), JSON.stringify({ version: 1, secrets: [{ name: 'FIXTURE_TOKEN', value: 'synthetic-long-token-value' }] }))
   await contract.redact(botBody({ texts: ['synthetic-long-token-value'] }))
-  const source = await readFile(new URL('../src/team-contract.mjs', import.meta.url), 'utf8')
+  const source = await readFile(new URL('../server/team-contract.mjs', import.meta.url), 'utf8')
   assert.equal(source.includes('synthetic-long-token-value'), false)
 })

@@ -1,5 +1,13 @@
 # Changelog
 
+## DS Bot Mobile App 插件 0.3.0 — 2026-11-03
+
+- 原 `ds-bot-mobile-bridge` 服务端并入 `ds-bot-mobile-app`：配对、设备授权、HTTP/WS 传输与 `/mobile-operator` 所有者通道由同一插件提供；电脑端只需 Mobile Web 与 Mobile App 两个插件。`ds-bot-mobile-bridge` 不再单独发布。
+- 适配官方 npm DS Bot 0.2.6，无需补丁：会话校验走公开 `state`，脱敏使用 DS Bot 自己的已知值规则读取 `dsBotHome/secrets.json`，投递使用宿主 `sessionController` 并保留手机请求 ID 作为稳定回执；只读状态下拒绝发送。
+- 新增可选配置 `dsBotHome`（默认 `DSH_HOME/bot`）；最低 DSH 0.2.1-rc.5。
+- 迁移：把 profile 中 `ds-bot-mobile-bridge` 的 config 原样移到 `ds-bot-mobile-app`，`home` 不变即可保留已配对设备，无需重新扫码。
+- 已知限制：Bot 的连接能力刚修改时，新配置在下一次电脑端发送或新会话时挂载。
+
 ## 0.1.7-preview.1 — 2026-10-19
 
 - 修复中文标点、括号和引号相邻时 Markdown 加粗星号原样显示的问题。

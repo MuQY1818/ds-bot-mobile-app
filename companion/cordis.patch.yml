@@ -1,3 +1,11 @@
+# Installing/selecting this bundle opens no listener and creates no state.
+# Configure this row in the owner's profile to enable the App connection explicitly.
 - insert:
     - id: ds-bot-mobile-app
       name: ds-bot-mobile-app
+      config:
+        enabled: false
+        host: 127.0.0.1
+        port: 0
+        allowedOrigins: []
+        devAllowInsecure: false

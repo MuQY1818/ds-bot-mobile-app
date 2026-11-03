@@ -2,7 +2,7 @@
 import { spawnSync } from 'node:child_process'
 import { mkdir, writeFile, readFile, symlink } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
-const root = resolve(import.meta.dirname, '..'), fixture = join(root, 'fixture')
+const root = resolve(import.meta.dirname, '..'), fixture = join(root, 'fixture-server')
 const run = (cmd, args, cwd) => {
   const result = spawnSync(cmd, args, {cwd, encoding: 'utf8'})
   if (result.status !== 0) throw Error(`Fixture command failed: ${cmd}`)
