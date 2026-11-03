@@ -7,7 +7,7 @@
 
 <p>
   <a href="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml"><img src="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml/badge.svg?branch=main" alt="CI checks on main"></a>
-  <a href="docs/status.md"><img src="https://img.shields.io/badge/source%20preview-0.1.7--preview.1-5879E8" alt="Source preview 0.1.7-preview.1"></a>
+  <a href="docs/status.md"><img src="https://img.shields.io/badge/source%20preview-0.1.7--preview.2-5879E8" alt="Source preview 0.1.7-preview.2"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-3D8B7D" alt="Apache License 2.0"></a>
 </p>
 
@@ -72,7 +72,7 @@ There are two desktop plugins, Web and App, both reusing an existing DSH / offic
 
 | Deliverable | Current version | Distribution |
 | --- | --- | --- |
-| App source preview | `0.1.7-preview.1` | This repository and [releases](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.1) |
+| App source preview | `0.1.7-preview.2` | This repository and [releases](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.2) |
 | Native client | `0.1.7` | Build with your own platform toolchain; no public IPA/APK |
 | Desktop App plugin | `0.3.0` | `ds-bot-mobile-app-0.3.0.tgz`, installed in DSH; includes the former Mobile Bridge |
 
@@ -84,7 +84,7 @@ Mobile Bridge is merged into App plugin 0.3.0 and no longer released separately;
 
 Use an existing DSH (0.2.1-rc.5+) and official DS Bot (0.2.6+) team. Install and enable the **App plugin**, then configure a phone-accessible HTTPS endpoint with a trusted certificate. Follow [installation and pairing](docs/installation.md).
 
-Bridge requires compatible DS Bot interfaces. Pristine npm DS Bot `0.1.7` does not supply them. App releases include the separately identified `ds-bot-0.1.7-codex.1.tgz` compatible package; an existing compatible installation does not need replacing. The installation guide covers compatibility and updates.
+App plugin 0.3.0 uses only public interfaces of pristine npm DS Bot `0.2.6`+; no patch or compatibility package is needed, and the `ds-bot-0.1.7-codex.1.tgz` from earlier releases is obsolete. The installation guide covers migrating from Bridge 0.0.x.
 
 ### 2. Build the native client
 

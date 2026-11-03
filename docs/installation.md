@@ -1,6 +1,6 @@
 # 安装与配对
 
-原生 App 当前是 `0.1.7-preview.1` 源码预览，客户端版本 `0.1.7`，尚无可直接安装的 IPA/APK。希望不构建客户端直接在手机使用，请选择 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。[文档首页](README.md)提供其他指南入口。
+原生 App 当前是 `0.1.7-preview.2` 源码预览，客户端版本 `0.1.7`，尚无可直接安装的 IPA/APK。希望不构建客户端直接在手机使用，请选择 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。[文档首页](README.md)提供其他指南入口。
 
 ## 开始前
 

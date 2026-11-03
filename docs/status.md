@@ -1,13 +1,15 @@
 # 当前状态
 
-更新日期：2026-10-19。当前主要使用入口和开发重点是 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。原生 App 保留源码预览，本地设备更新与公开发行分别标注。
+更新日期：2026-11-03。当前主要使用入口和开发重点是 [Mobile Web](https://github.com/MuQY1818/ds-bot-mobile-web)。原生 App 保留源码预览，本地设备更新与公开发行分别标注。
 
 ## 源码与安装版本
 
 | 组件 | 当前版本 | 状态 |
 | --- | --- | --- |
-| 原生 App | `0.1.7`，源码预览 `0.1.7-preview.1` | 本地 iPhone build `11` 已安装并启动；没有公开 IPA/APK |
+| 原生 App | `0.1.7`，源码预览 `0.1.7-preview.2` | 本地 iPhone build `11` 已安装并启动；没有公开 IPA/APK |
 | 电脑端 App 插件 | `0.3.0` | 手机访问 App 标签、配对批准、设备管理、认证与文字消息服务（含原 Mobile Bridge） |
+
+2026-11-03：**0.1.7-preview.2**。原 Mobile Bridge 并入 App 插件 0.3.0，直接适配 DSH `0.2.1-rc.5` 与官方 npm DS Bot `0.2.6`，不再需要兼容包。实际宿主已完成迁移，原 iPhone 配对保留。说明见[0.1.7-preview.2](releases/v0.1.7-preview.2.md)。
 
 现有 App 包含点击即显示发送中气泡、保留下一条草稿、最新消息进入、近期前台连接复用和圆形回到底部按钮。更新沿用原应用与配对身份。
 

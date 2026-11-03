@@ -38,12 +38,12 @@
 
 | 组件 | 版本 | 入口 |
 | --- | --- | --- |
-| 原生 App / 源码预览 | `0.1.7` / `0.1.7-preview.1` | [App 发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.1) |
+| 原生 App / 源码预览 | `0.1.7` / `0.1.7-preview.2` | [App 发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.2) |
 | 电脑端 App 插件 | `0.3.0` | 含原 Mobile Bridge |
 
 Mobile Bridge 已并入 App 插件 0.3.0（`companion/`），不再有独立 `bridge/` 目录或单独发布。原生 App 与电脑端 App 插件独立版本化。
 
-历史变化见 [CHANGELOG](../CHANGELOG.md)；各次源码预览说明保留于 [0.1.7](releases/v0.1.7-preview.1.md)、[0.1.6](releases/v0.1.6-preview.1.md)、[0.1.5](releases/v0.1.5-preview.1.md) 和 [0.1.4](releases/v0.1.4-preview.1.md)。旧版本记录描述的是当次交付，不代表当前支持范围。
+历史变化见 [CHANGELOG](../CHANGELOG.md)；各次源码预览说明保留于 [0.1.7 Preview 2](releases/v0.1.7-preview.2.md)、[0.1.7](releases/v0.1.7-preview.1.md)、[0.1.6](releases/v0.1.6-preview.1.md)、[0.1.5](releases/v0.1.5-preview.1.md) 和 [0.1.4](releases/v0.1.4-preview.1.md)。旧版本记录描述的是当次交付，不代表当前支持范围。
 
 ## 反馈与贡献
 

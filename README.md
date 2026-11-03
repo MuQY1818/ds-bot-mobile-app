@@ -7,7 +7,7 @@
 
 <p>
   <a href="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml"><img src="https://github.com/MuQY1818/ds-bot-mobile-app/actions/workflows/check.yml/badge.svg?branch=main" alt="CI checks on main"></a>
-  <a href="docs/status.md"><img src="https://img.shields.io/badge/source%20preview-0.1.7--preview.1-5879E8" alt="Source preview 0.1.7-preview.1"></a>
+  <a href="docs/status.md"><img src="https://img.shields.io/badge/source%20preview-0.1.7--preview.2-5879E8" alt="Source preview 0.1.7-preview.2"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-3D8B7D" alt="Apache License 2.0"></a>
 </p>
 
@@ -72,7 +72,7 @@
 
 | 交付项 | 当前版本 | 获取方式 |
 | --- | --- | --- |
-| App 源码预览 | `0.1.7-preview.1` | 本仓库与[发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.1) |
+| App 源码预览 | `0.1.7-preview.2` | 本仓库与[发布页](https://github.com/MuQY1818/ds-bot-mobile-app/releases/tag/v0.1.7-preview.2) |
 | 原生客户端 | `0.1.7` | 使用自己的平台工具链构建；无公开 IPA/APK |
 | 电脑端 App 插件 | `0.3.0` | `ds-bot-mobile-app-0.3.0.tgz`，安装到 DSH；包含原 Mobile Bridge |
 
@@ -84,7 +84,7 @@ Mobile Bridge 已并入 App 插件 0.3.0，不再单独发布；从旧版迁移�
 
 准备已有 DSH（0.2.1-rc.5+）与官方 DS Bot（0.2.6+）团队，安装并启用 **App 插件**，配置手机可达、证书可信的 HTTPS 入口。完整步骤见[安装与配对](docs/installation.md)。
 
-Bridge 需要兼容的 DS Bot 接口。原版 npm DS Bot `0.1.7` 不满足此要求；App 发布页另有明确标识的 `ds-bot-0.1.7-codex.1.tgz` 兼容包。已有兼容版本无需重复替换，安装顺序与升级要求见安装指南。
+App 插件 0.3.0 直接使用官方 npm DS Bot `0.2.6`+ 的公开接口，不需要补丁或兼容包；早期发布页中的 `ds-bot-0.1.7-codex.1.tgz` 已不再需要。从 Bridge 0.0.x 迁移见安装指南。
 
 ### 2. 构建原生客户端
 

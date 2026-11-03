@@ -1,6 +1,8 @@
 # 兼容范围与验证
 
-目标：公开 DSH 0.2.1-rc.2、Expo 54、React Native 0.81.5、Node.js 24。App 当前为源码预览，不等同 App Store / Play Store 发行。
+目标：公开 DSH 0.2.1-rc.5、官方 npm DS Bot 0.2.6、Expo 54、React Native 0.81.5、Node.js 24。App 当前为源码预览，不等同 App Store / Play Store 发行。
+
+**0.1.7-preview.2（App 插件 0.3.0）**：原生 App 154、SDK 30、App 插件 65 项测试；真实 DSH `0.2.1-rc.5` + 未修改的官方 DS Bot `0.2.6` 下 17 项集成断言（含稳定回执写入真实历史）与 6 项安装包生命周期断言（启用、配对、停用保留状态、重新启用无需重配、移除保留状态）；源码审计 0 发现。实际宿主已迁移，原 iPhone 配对保留。
 
 原开发工作区已通过 118 App 测试、28 SDK 测试、30 Bridge 单元测试、17 HTTP/WebSocket/SDK 场景和 11 打包生命周期断言。桌面兼容包通过 635 单元测试及 41 mock smoke 步骤。公开导出新增独立依赖、通用签名脚本和 CI，必须以本仓库实际检查结果为准。
 

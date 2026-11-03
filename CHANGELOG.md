@@ -1,6 +1,6 @@
 # Changelog
 
-## DS Bot Mobile App 插件 0.3.0 — 2026-11-03
+## 0.1.7-preview.2 — 2026-11-03（电脑端 App 插件 0.3.0）
 
 - 原 `ds-bot-mobile-bridge` 服务端并入 `ds-bot-mobile-app`：配对、设备授权、HTTP/WS 传输与 `/mobile-operator` 所有者通道由同一插件提供；电脑端只需 Mobile Web 与 Mobile App 两个插件。`ds-bot-mobile-bridge` 不再单独发布。
 - 适配官方 npm DS Bot 0.2.6，无需补丁：会话校验走公开 `state`，脱敏使用 DS Bot 自己的已知值规则读取 `dsBotHome/secrets.json`，投递使用宿主 `sessionController` 并保留手机请求 ID 作为稳定回执；只读状态下拒绝发送。
